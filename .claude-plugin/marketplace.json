@@ -1,0 +1,15 @@
+{
+  "name": "enkr-skills",
+  "owner": {
+    "name": "Jing Hui PANG",
+    "email": "enkr1@users.noreply.github.com"
+  },
+  "plugins": [
+    {
+      "name": "enkr-skills",
+      "description": "Community-driven Claude Code skills for developer workflows",
+      "version": "1.0.0",
+      "source": "./"
+    }
+  ]
+}

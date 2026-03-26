@@ -1,0 +1,13 @@
+{
+  "name": "enkr-skills",
+  "description": "Community-driven Claude Code skills for developer workflows",
+  "version": "1.0.0",
+  "author": {
+    "name": "Jing Hui PANG",
+    "email": "enkr1@users.noreply.github.com"
+  },
+  "homepage": "https://github.com/enkr1/claude-skills",
+  "repository": "https://github.com/enkr1/claude-skills",
+  "license": "MIT",
+  "keywords": ["skills", "commit", "gitmoji", "conventional-commits", "claude-code"]
+}
