@@ -1,7 +1,7 @@
 # threads (design spec)
 
 Date: 2026-06-02
-Status: design, pending user review
+Status: approved 2026-06-02, in build
 Author: enkr1
 
 > Name confirmed `threads` (2026-06-02). Supersedes the existing manual `task-tree` skill; retire that one to avoid trigger collision on `backtrack`.
@@ -33,6 +33,16 @@ Cross-project priority intelligence, recurring tasks, numeric scoring engines. (
 4. **Commands / skill** for precise control: `/threads` (full tree view), plus natural-language overrides ("do D first", "D belongs under B", "done", "snooze D till tomorrow").
 
    **Triggers (user muscle-memory):** `backtrack` and `bt` (shorthand) for pop / return to parent; `/threads` and `/bt` as commands; natural language for the rest ("switch to X", "where am i", "done with this"). `backtrack` currently fires the legacy `task-tree` skill, so that skill is retired or its triggers stripped when `threads` ships.
+
+   **Rendering (emoji status, fast ADHD scanning):** 🎯 current · ▶️ active · ⏸ paused · ⛔ blocked · 😴 snoozed · ✅ done · ⏰ stale. Used in both the statusline and the `/threads` tree:
+
+   ```
+   🎯 build threads skill
+   ├─ ✅ spec committed
+   ├─ ▶️ scaffold tests
+   └─ ⏸ rename repos
+      └─ 😴 migrate 28 skills
+   ```
 
 ## Data model
 
@@ -76,8 +86,8 @@ Queue is derived from nodes, not stored separately.
 
 ## Distribution
 
-- Home: `claude-code-skills` (rename of `claude-skills`), a public Claude Code plugin + marketplace.
-- Develop in that repo, symlink into `~/.claude/skills/` so it runs live (the pattern already used for `claude-md-improver`). Private skills and `settings.json` stay in the private `claude-config` repo. Never merge config into the public repo.
+- Home: `claude-code-skills` (renamed from `claude-skills`, done 2026-06-02), a public Claude Code plugin + marketplace.
+- Develop in that repo, symlink into `~/.claude/skills/` so it runs live (the pattern already used for `claude-md-improver`). Private skills and `settings.json` stay in the private `private-claude-code-config` repo (formerly `claude-config`). Never merge config into the public repo.
 - **Distribution caveat:** because plugin hooks do not inject (#12151), the public release ships a tiny installer that writes the `UserPromptSubmit` hook into the user's `settings.json`. The skill, statusline, and commands package normally.
 
 ## Open items
@@ -85,7 +95,7 @@ Queue is derived from nodes, not stored separately.
 - **Name: resolved -> `threads`** (2026-06-02). Triggers include `backtrack` + `bt`.
 - **Staleness window: resolved -> 7 days** before it asks "still need this?".
 - **Retire legacy `task-tree`** when `threads` ships (trigger collision on `backtrack`).
-- **Repo rename + symlink migration** of the other 28 skills and de-duping `commit`. Separate task, parked.
+- **Repo renames: DONE** (2026-06-02) -> `claude-code-skills` + `private-claude-code-config`. Symlink migration of the other 28 skills and de-duping `commit` still parked.
 
 ## Future (v2+)
 
