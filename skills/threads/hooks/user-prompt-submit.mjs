@@ -40,10 +40,7 @@ try {
 
   const hasWork = Object.values(tree.nodes).some((n) => n.status !== 'done');
   if (hasWork) {
-    process.stdout.write(
-      `${summarize(tree, { label: project })}\n` +
-        '(threads: if this message starts, switches, branches, or finishes work, update it via the threads skill.)\n',
-    );
+    process.stdout.write(`${summarize(tree, { label: project })} · update threads if work changed\n`);
   }
 } catch {
   // never block a prompt

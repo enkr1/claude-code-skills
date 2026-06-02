@@ -18,8 +18,13 @@ try {
   if (open.length === 0) {
     console.log('threads: idle');
   } else {
-    const cur = tree.current && tree.nodes[tree.current] ? tree.nodes[tree.current].name : 'idle';
-    const next = open.filter((n) => n.id !== tree.current).slice(0, 2).map((n) => n.name);
+    // statusline is one glance-line: shorten names to the first clause, capped
+    const short = (s) => {
+      const head = s.split(',')[0].trim();
+      return head.length > 28 ? `${head.slice(0, 25)}...` : head;
+    };
+    const cur = tree.current && tree.nodes[tree.current] ? short(tree.nodes[tree.current].name) : 'idle';
+    const next = open.filter((n) => n.id !== tree.current).slice(0, 2).map((n) => short(n.name));
     console.log(`▸ ${cur}${next.length ? ` · next: ${next.join(', ')}` : ''} · ${open.length} open`);
   }
 } catch {

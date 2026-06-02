@@ -101,10 +101,8 @@ export function summarize(tree, { label }) {
   const parked = nodes.filter((n) => n.status === 'snoozed').length;
 
   const current = tree.current && tree.nodes[tree.current] ? tree.nodes[tree.current].name : '(none)';
-  const top = open.slice(0, 3).map((n) => n.name).join(' · ') || '(nothing open)';
-  const more = open.length > 3 ? ` (+${open.length - 3} more)` : '';
-
-  return [`[threads · ${label}] on: ${current}`, `open: ${top}${more}`, `${open.length} open · ${parked} parked`].join('\n');
+  const next = open.filter((n) => n.id !== tree.current).slice(0, 2).map((n) => n.name).join(', ');
+  return `[threads·${label}] ▸ ${current}${next ? ` · next: ${next}` : ''} · ${open.length} open${parked ? ` · ${parked} parked` : ''}`;
 }
 
 /**
