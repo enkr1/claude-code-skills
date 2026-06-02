@@ -58,6 +58,19 @@ node ~/.claude/skills/threads/install.mjs   # wires the hook, then restart Claud
 
 > **Why the extra step:** plugin-defined hooks cannot inject context yet ([claude-code#12151](https://github.com/anthropics/claude-code/issues/12151)), so `install.mjs` adds the `UserPromptSubmit` hook to your `settings.json` (backed up, append-only, idempotent). To uninstall, delete that one hook block.
 
+### Statusline (optional)
+
+threads ships a one-line "where am i" for the Claude Code statusline (`statusline/threads-statusline.mjs`). To show it, add this to your statusline script, passing the chat's `session_id`:
+
+```bash
+SID=$(jq -r '.session_id // empty')
+TH=$(THREADS_SESSION="$SID" node ~/.claude/skills/threads/statusline/threads-statusline.mjs 2>/dev/null)
+if [ -n "$TH" ] && [ "$TH" != "threads: idle" ]; then printf "\n%s" "$TH"; fi
+exit 0
+```
+
+> **The `exit 0` is not optional.** If a statusline script exits non-zero, Claude Code blanks the entire bar. A trailing `&&` chain that short-circuits when there is nothing to show is an easy way to exit 1 by accident, so always end the script with `exit 0`. If `node` is not on the statusline's PATH (for example under nvm), use the absolute node path.
+
 Local-first: state is a single JSON file at `~/.claude/threads.json`. No network, no account.
 
 ---
