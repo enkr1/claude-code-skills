@@ -58,17 +58,50 @@ export function render(tree, { project, now }) {
   const durationFor = (n) =>
     n.status === 'snoozed' ? 'parked' : n.status === 'done' ? '' : formatDuration(now - n.started);
 
-  const walk = (node, depth, isLast) => {
+  // Leftmost 2-col gutter holds the ▸ "you are here" pointer so it never
+  // collides with tree connectors; branchPrefix carries ancestor │ bars.
+  const walk = (node, branchPrefix, isRootNode, isLast) => {
     const pointer = tree.current === node.id ? '▸ ' : '  ';
-    const connector = depth > 0 ? (isLast ? '└─ ' : '├─ ') : '';
-    const indent = '  '.repeat(Math.max(0, depth - 1));
-    const left = `  ${pointer}${indent}${connector}${statusGlyph(node.status)} ${node.name}`;
+    const connector = isRootNode ? '' : isLast ? '└─ ' : '├─ ';
+    const left = `${pointer}${branchPrefix}${connector}${statusGlyph(node.status)} ${node.name}`;
     lines.push(padBetween(left, durationFor(node)));
+    const childPrefix = branchPrefix + (isRootNode ? '' : isLast ? '   ' : '│  ');
     const kids = childrenOf(node.id);
-    kids.forEach((k, i) => walk(k, depth + 1, i === kids.length - 1));
+    kids.forEach((k, i) => walk(k, childPrefix, false, i === kids.length - 1));
   };
-  nodes.filter(isRoot).forEach((r) => walk(r, 0, true));
+  const roots = nodes.filter(isRoot);
+  roots.forEach((r, i) => walk(r, '', true, i === roots.length - 1));
 
   lines.push(rule, '  nothing dropped');
   return lines.join('\n');
+}
+
+const OPEN_ORDER = { active: 0, blocked: 1, paused: 2 };
+const isOpen = (n) => n.status in OPEN_ORDER;
+
+/**
+ * Compact one-glance state for the hook to inject every turn: the current
+ * task, the top open work (ranked active > blocked > paused, then recency),
+ * and open/parked counts. This is what keeps Claude from forgetting threads.
+ *
+ * @param {{current: string|null, nodes: Record<string, object>}} tree
+ * @param {{project: string}} opts
+ * @returns {string}
+ */
+export function summarize(tree, { project }) {
+  const nodes = Object.values(tree.nodes).filter((n) => n.project === project);
+  const open = nodes
+    .filter(isOpen)
+    .sort((a, b) => OPEN_ORDER[a.status] - OPEN_ORDER[b.status] || (b.lastTouched ?? 0) - (a.lastTouched ?? 0));
+  const parked = nodes.filter((n) => n.status === 'snoozed').length;
+
+  const current = tree.current && tree.nodes[tree.current] ? tree.nodes[tree.current].name : '(none)';
+  const top = open.slice(0, 3).map((n) => n.name).join(' · ') || '(nothing open)';
+  const more = open.length > 3 ? ` (+${open.length - 3} more)` : '';
+
+  return [
+    `[threads · ${project}] on: ${current}`,
+    `open: ${top}${more}`,
+    `${open.length} open · ${parked} parked`,
+  ].join('\n');
 }

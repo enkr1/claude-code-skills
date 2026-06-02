@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { statusGlyph, formatDuration, render } from './render.mjs';
+import { statusGlyph, formatDuration, render, summarize } from './render.mjs';
 
 describe('statusGlyph', () => {
   it('maps each status to its style-A glyph', () => {
@@ -58,5 +58,61 @@ describe('render', () => {
 
   it('ends with the reassurance footer', () => {
     expect(out().trimEnd().endsWith('nothing dropped')).toBe(true);
+  });
+});
+
+describe('summarize', () => {
+  const min = 60_000;
+  const now = 100 * 24 * 60 * min;
+  const tree = {
+    current: 'a',
+    nodes: {
+      a: { id: 'a', name: 'build threads skill', project: 'form-check', parent: null, status: 'active', lastTouched: now - 18 * min },
+      b: { id: 'b', name: 'spec', project: 'form-check', parent: 'a', status: 'done', lastTouched: now },
+      c: { id: 'c', name: 'core ops', project: 'form-check', parent: 'a', status: 'active', lastTouched: now - 5 * min },
+      d: { id: 'd', name: 'render', project: 'form-check', parent: 'a', status: 'paused', lastTouched: now - 1 * min },
+      m: { id: 'm', name: 'migrate', project: 'form-check', parent: null, status: 'snoozed', lastTouched: now },
+    },
+  };
+
+  it('names the current task and counts open vs parked', () => {
+    const s = summarize(tree, { project: 'form-check' });
+    expect(s).toContain('form-check');
+    expect(s).toContain('build threads skill');
+    expect(s).toContain('3 open');
+    expect(s).toContain('1 parked');
+  });
+
+  it('omits done and snoozed nodes from the open list', () => {
+    const s = summarize(tree, { project: 'form-check' });
+    expect(s).not.toContain('spec');
+    expect(s).not.toContain('migrate');
+  });
+});
+
+describe('render (nested + current child)', () => {
+  const now = 1000;
+  // a -> (b -> c), a -> d(current). b is not a's last child, so b's branch must continue with │.
+  const tree = {
+    current: 'd',
+    nodes: {
+      a: { id: 'a', name: 'build', project: 'p', parent: null, status: 'paused', started: now },
+      b: { id: 'b', name: 'core ops', project: 'p', parent: 'a', status: 'paused', started: now },
+      c: { id: 'c', name: 'render', project: 'p', parent: 'b', status: 'done', started: now },
+      d: { id: 'd', name: 'write SKILL.md', project: 'p', parent: 'a', status: 'active', started: now },
+    },
+  };
+  const out = () => render(tree, { project: 'p', now });
+
+  it('draws a vertical connector for a continuing branch', () => {
+    expect(out()).toContain('│  └─ ✓ render');
+  });
+
+  it('marks a current child with a left-gutter pointer that does not collide with the connector', () => {
+    expect(out()).toContain('▸ └─ ● write SKILL.md');
+  });
+
+  it('keeps non-current rows on a 2-space gutter', () => {
+    expect(out()).toContain('  ├─ ○ core ops');
   });
 });
