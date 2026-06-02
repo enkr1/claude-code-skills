@@ -2,6 +2,8 @@
 
 Date: 2026-06-02
 Status: approved 2026-06-02, in build
+
+> **Revision 2026-06-02 (post-build):** scoping pivoted from project to **per-chat**. Each chat (`CLAUDE_CODE_SESSION_ID`) is its own tree with its own `current`; nodes carry both `session` and `project`; a `global` command renders the cross-chat forest. This also removed the single-`current` concurrency seam. State shape is now `{ sessions: { [id]: {current, project, lastActive} }, nodes: { [id]: {..., session, project} } }`. Code is the SSOT for details below where they differ.
 Author: enkr1
 
 > Name confirmed `threads` (2026-06-02). Supersedes the existing manual `task-tree` skill; retire that one to avoid trigger collision on `backtrack`.

@@ -7,6 +7,8 @@ description: ADHD-friendly branching task tracker. Use when the user dumps multi
 
 A persistent, branching task tree so neither you nor the user loses track of work. The user has ADHD and dumps branching ideas faster than they can file them; your job is to file them so nothing is dropped. State lives at `~/.claude/threads.json`. Drive it with the CLI, never hand-edit the JSON.
 
+**Per-chat by default:** each chat is its own tree with its own `current` (scoped by `CLAUDE_CODE_SESSION_ID`), so chats never tangle. `tree` shows THIS chat; `global` zooms out to every chat's tree.
+
 Run the CLI with node:
 
 ```
@@ -29,7 +31,8 @@ node ~/.claude/skills/threads/bin/threads.mjs <command>
 | `bt` / `backtrack` | return to the parent task |
 | `done ["<query>"]` | complete the current (or matched) task |
 | `snooze "<query>" [days]` | defer a task; it resurfaces later |
-| `tree` | full tree (the `▸` marks where you are) |
+| `tree` | this chat's tree (the `▸` marks where you are) |
+| `global` | every chat's tree, grouped by project (zoom out) |
 | `context` | compact state (the hook injects this each turn) |
 | `statusline` | one-line status |
 

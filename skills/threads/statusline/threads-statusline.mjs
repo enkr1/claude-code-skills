@@ -1,18 +1,19 @@
 #!/usr/bin/env node
-// threads statusline: prints a one-line "where am i" for the Claude Code status bar.
-// Reads the global tree; scopes to the current project. Never throws (status bar must not break).
+// threads statusline: one-line "where am i" for THIS chat. Reads the global file,
+// scopes to the current chat (CLAUDE_CODE_SESSION_ID). Never throws.
 
 import { homedir } from 'node:os';
-import { join, basename } from 'node:path';
+import { join } from 'node:path';
 import { load } from '../src/io.mjs';
+import { view } from '../src/session.mjs';
 
 try {
   const file = process.env.THREADS_FILE || join(homedir(), '.claude', 'threads.json');
-  const project = process.env.THREADS_PROJECT || basename(process.cwd());
-  const tree = await load(file);
+  const session = process.env.THREADS_SESSION || process.env.CLAUDE_CODE_SESSION_ID || 'default';
+  const tree = view(await load(file), session);
 
   const open = Object.values(tree.nodes).filter(
-    (n) => n.project === project && (n.status === 'active' || n.status === 'paused' || n.status === 'blocked'),
+    (n) => n.status === 'active' || n.status === 'paused' || n.status === 'blocked',
   );
   if (open.length === 0) {
     console.log('threads: idle');
@@ -22,6 +23,5 @@ try {
     console.log(`▸ ${cur}${next.length ? ` · next: ${next.join(', ')}` : ''} · ${open.length} open`);
   }
 } catch {
-  // status bar must never break the session
   console.log('');
 }

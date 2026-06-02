@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { statusGlyph, formatDuration, render, summarize } from './render.mjs';
+import { statusGlyph, formatDuration, render, summarize, renderGlobal } from './render.mjs';
 
 describe('statusGlyph', () => {
   it('maps each status to its style-A glyph', () => {
@@ -33,7 +33,7 @@ describe('render', () => {
       m: { id: 'm', name: 'migrate 28 skills', project: 'form-check', parent: null, status: 'snoozed', started: now - 2 * 24 * 60 * min },
     },
   };
-  const out = () => render(tree, { project: 'form-check', now });
+  const out = () => render(tree, { label: 'form-check', now });
 
   it('renders a header with project and open/parked counts', () => {
     const header = out().split('\n')[0];
@@ -76,7 +76,7 @@ describe('summarize', () => {
   };
 
   it('names the current task and counts open vs parked', () => {
-    const s = summarize(tree, { project: 'form-check' });
+    const s = summarize(tree, { label: 'form-check' });
     expect(s).toContain('form-check');
     expect(s).toContain('build threads skill');
     expect(s).toContain('3 open');
@@ -84,9 +84,33 @@ describe('summarize', () => {
   });
 
   it('omits done and snoozed nodes from the open list', () => {
-    const s = summarize(tree, { project: 'form-check' });
+    const s = summarize(tree, { label: 'form-check' });
     expect(s).not.toContain('spec');
     expect(s).not.toContain('migrate');
+  });
+});
+
+describe('renderGlobal', () => {
+  const now = 1000;
+  const state = {
+    sessions: {
+      s1: { current: 'a', project: 'form-check', lastActive: 2 },
+      s2: { current: 'c', project: 'bakery', lastActive: 1 },
+    },
+    nodes: {
+      a: { id: 'a', name: 'fix auth', session: 's1', parent: null, status: 'active', started: now },
+      b: { id: 'b', name: 'old done thing', session: 's1', parent: null, status: 'done', started: now },
+      c: { id: 'c', name: 'menu page', session: 's2', parent: null, status: 'active', started: now },
+    },
+  };
+
+  it('shows every chat that has open work, with project labels and a global header', () => {
+    const out = renderGlobal(state, { now });
+    expect(out).toContain('global');
+    expect(out).toContain('fix auth');
+    expect(out).toContain('menu page');
+    expect(out).toContain('form-check');
+    expect(out).toContain('bakery');
   });
 });
 
@@ -102,7 +126,7 @@ describe('render (nested + current child)', () => {
       d: { id: 'd', name: 'write SKILL.md', project: 'p', parent: 'a', status: 'active', started: now },
     },
   };
-  const out = () => render(tree, { project: 'p', now });
+  const out = () => render(tree, { label: 'p', now });
 
   it('draws a vertical connector for a continuing branch', () => {
     expect(out()).toContain('│  └─ ✓ render');

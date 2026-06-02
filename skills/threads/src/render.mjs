@@ -1,21 +1,16 @@
-// threads view layer: render tree state into the style-A ASCII tree.
+// threads view layer: render a chat's tree (style A, emoji-free glyphs) and the
+// cross-chat global forest. Per-chat functions take a single-session subtree.
+
+import { view } from './session.mjs';
 
 const GLYPHS = { active: '●', paused: '○', done: '✓', blocked: '✕', snoozed: '◦' };
 
-/**
- * Map a node status to its style-A glyph. Unknown statuses fall back to a dot.
- * @param {string} status
- * @returns {string} single-width glyph
- */
+/** Map a node status to its style-A glyph. Unknown statuses fall back to a dot. */
 export function statusGlyph(status) {
   return GLYPHS[status] ?? '·';
 }
 
-/**
- * Human duration: "18m" under an hour, "2h 30m" at or over an hour.
- * @param {number} ms elapsed milliseconds
- * @returns {string}
- */
+/** Human duration: "18m" under an hour, "2h 30m" at or over an hour. */
 export function formatDuration(ms) {
   const totalMin = Math.floor(ms / 60_000);
   if (totalMin < 60) return `${totalMin}m`;
@@ -23,6 +18,7 @@ export function formatDuration(ms) {
 }
 
 const WIDTH = 60;
+const RULE = `  ${'─'.repeat(WIDTH - 2)}`;
 
 /** Lay `right` flush against the right edge at column WIDTH, after `left`. */
 function padBetween(left, right) {
@@ -31,35 +27,29 @@ function padBetween(left, right) {
   return left + ' '.repeat(gap) + right;
 }
 
+function counts(tree) {
+  const ns = Object.values(tree.nodes);
+  return {
+    open: ns.filter((n) => n.status === 'active' || n.status === 'paused' || n.status === 'blocked').length,
+    parked: ns.filter((n) => n.status === 'snoozed').length,
+  };
+}
+
 /**
- * Render the threads tree in style A: hairline header with counts, an
- * emoji-free glyph tree (current node pointed at with ▸), right-aligned
- * durations, and a reassurance footer. Pure: pass `now` for the clock.
- *
- * @param {{current: string|null, nodes: Record<string, object>}} tree
- * @param {{project: string, now: number}} opts
- * @returns {string} multi-line render
+ * Render just the node lines of a single-session tree (no header/footer):
+ * branch prefixes with │ bars, a left-gutter ▸ for the current node, right-aligned
+ * durations, snoozed -> "parked".
+ * @returns {string[]} lines
  */
-export function render(tree, { project, now }) {
-  const nodes = Object.values(tree.nodes).filter((n) => n.project === project);
+function renderBody(tree, now) {
+  const nodes = Object.values(tree.nodes);
   const ids = new Set(nodes.map((n) => n.id));
   const isRoot = (n) => n.parent === null || !ids.has(n.parent);
   const childrenOf = (id) => nodes.filter((n) => n.parent === id);
-
-  const open = nodes.filter((n) => n.status === 'active' || n.status === 'paused' || n.status === 'blocked').length;
-  const parked = nodes.filter((n) => n.status === 'snoozed').length;
-
-  const rule = '  ' + '─'.repeat(WIDTH - 2);
-  const lines = [
-    padBetween(`  threads · ${project}`, `${open} open · ${parked} parked`),
-    rule,
-  ];
-
   const durationFor = (n) =>
     n.status === 'snoozed' ? 'parked' : n.status === 'done' ? '' : formatDuration(now - n.started);
 
-  // Leftmost 2-col gutter holds the ▸ "you are here" pointer so it never
-  // collides with tree connectors; branchPrefix carries ancestor │ bars.
+  const lines = [];
   const walk = (node, branchPrefix, isRootNode, isLast) => {
     const pointer = tree.current === node.id ? '▸ ' : '  ';
     const connector = isRootNode ? '' : isLast ? '└─ ' : '├─ ';
@@ -71,25 +61,40 @@ export function render(tree, { project, now }) {
   };
   const roots = nodes.filter(isRoot);
   roots.forEach((r, i) => walk(r, '', true, i === roots.length - 1));
+  return lines;
+}
 
-  lines.push(rule, '  nothing dropped');
-  return lines.join('\n');
+/**
+ * Render one chat's tree: hairline header with `label` and open/parked counts,
+ * the glyph tree, a reassurance footer.
+ * @param {{current: string|null, nodes: Record<string, object>}} tree single-session subtree
+ * @param {{label: string, now: number}} opts
+ * @returns {string}
+ */
+export function render(tree, { label, now }) {
+  const { open, parked } = counts(tree);
+  return [
+    padBetween(`  threads · ${label}`, `${open} open · ${parked} parked`),
+    RULE,
+    ...renderBody(tree, now),
+    RULE,
+    '  nothing dropped',
+  ].join('\n');
 }
 
 const OPEN_ORDER = { active: 0, blocked: 1, paused: 2 };
 const isOpen = (n) => n.status in OPEN_ORDER;
 
 /**
- * Compact one-glance state for the hook to inject every turn: the current
- * task, the top open work (ranked active > blocked > paused, then recency),
- * and open/parked counts. This is what keeps Claude from forgetting threads.
- *
+ * Compact one-glance state for the hook to inject: current task, top open work
+ * (active > blocked > paused, then recency), and counts. Operates on one chat's
+ * subtree; `label` is the project shown in the header.
  * @param {{current: string|null, nodes: Record<string, object>}} tree
- * @param {{project: string}} opts
+ * @param {{label: string}} opts
  * @returns {string}
  */
-export function summarize(tree, { project }) {
-  const nodes = Object.values(tree.nodes).filter((n) => n.project === project);
+export function summarize(tree, { label }) {
+  const nodes = Object.values(tree.nodes);
   const open = nodes
     .filter(isOpen)
     .sort((a, b) => OPEN_ORDER[a.status] - OPEN_ORDER[b.status] || (b.lastTouched ?? 0) - (a.lastTouched ?? 0));
@@ -99,9 +104,40 @@ export function summarize(tree, { project }) {
   const top = open.slice(0, 3).map((n) => n.name).join(' · ') || '(nothing open)';
   const more = open.length > 3 ? ` (+${open.length - 3} more)` : '';
 
-  return [
-    `[threads · ${project}] on: ${current}`,
-    `open: ${top}${more}`,
-    `${open.length} open · ${parked} parked`,
-  ].join('\n');
+  return [`[threads · ${label}] on: ${current}`, `open: ${top}${more}`, `${open.length} open · ${parked} parked`].join('\n');
+}
+
+/**
+ * Render the cross-chat forest: every chat that still has open work, sorted by
+ * project then recency, each as its own labelled tree under one global header.
+ * @param {{sessions: Record<string, object>, nodes: Record<string, object>}} state
+ * @param {{now: number}} opts
+ * @returns {string}
+ */
+export function renderGlobal(state, { now }) {
+  const sids = Object.keys(state.sessions).sort((a, b) => {
+    const pa = state.sessions[a].project ?? '';
+    const pb = state.sessions[b].project ?? '';
+    if (pa !== pb) return pa < pb ? -1 : 1;
+    return (state.sessions[b].lastActive ?? 0) - (state.sessions[a].lastActive ?? 0);
+  });
+
+  const blocks = [];
+  let chats = 0;
+  let totalOpen = 0;
+  for (const sid of sids) {
+    const sub = view(state, sid);
+    const ns = Object.values(sub.nodes);
+    if (!ns.some((n) => n.status !== 'done')) continue; // skip finished/empty chats
+    chats += 1;
+    totalOpen += counts(sub).open;
+    const project = state.sessions[sid].project ?? 'global';
+    const root = ns.find((n) => !n.parent || !sub.nodes[n.parent]);
+    const chatName = (sub.current && sub.nodes[sub.current]?.name) || root?.name || 'chat';
+    blocks.push(`  ◆ ${project} · ${chatName}`, ...renderBody(sub, now), '');
+  }
+
+  const header = padBetween('  threads · global', `${chats} chats · ${totalOpen} open`);
+  if (chats === 0) return [header, RULE, '  (nothing open anywhere)'].join('\n');
+  return [header, RULE, '', ...blocks, RULE, '  nothing dropped'].join('\n');
 }
