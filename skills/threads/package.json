@@ -1,0 +1,14 @@
+{
+  "name": "@enkr/threads",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "threads: an ADHD-friendly branching task-tree for Claude Code (auto-capture, every-turn reinjection, priority queue, no dropped balls).",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.6"
+  }
+}
