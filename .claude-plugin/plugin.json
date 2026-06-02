@@ -6,8 +6,8 @@
     "name": "Jing Hui PANG",
     "email": "enkr1@users.noreply.github.com"
   },
-  "homepage": "https://github.com/enkr1/claude-skills",
-  "repository": "https://github.com/enkr1/claude-skills",
+  "homepage": "https://github.com/enkr1/claude-code-skills",
+  "repository": "https://github.com/enkr1/claude-code-skills",
   "license": "MIT",
   "keywords": ["skills", "commit", "gitmoji", "conventional-commits", "claude-code"]
 }
