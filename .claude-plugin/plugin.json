@@ -9,5 +9,5 @@
   "homepage": "https://github.com/enkr1/claude-code-skills",
   "repository": "https://github.com/enkr1/claude-code-skills",
   "license": "MIT",
-  "keywords": ["skills", "commit", "gitmoji", "conventional-commits", "claude-code"]
+  "keywords": ["skills", "claude-code", "threads", "task-tracker", "adhd", "code-review", "commit", "gitmoji"]
 }

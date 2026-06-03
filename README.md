@@ -13,6 +13,7 @@ Skills I built for my own Claude Code workflow and kept reaching for. Sharing th
 |-------|--------------|
 | [**threads**](skills/threads/SKILL.md) | A branching task tracker that never drops a ball: per-chat trees, a global view, auto-reinjected so Claude never forgets. |
 | [**commit**](skills/commit/SKILL.md) | Gitmoji and conventional commits, with anti-AI-signature rules. |
+| [**comprehensive-review**](skills/comprehensive-review/SKILL.md) | Staff-engineer ship gate: reviews the design, composes the built-in `/code-review` for the diff, then gives one decisive verdict. |
 
 ---
 
@@ -89,6 +90,17 @@ Enforces a clean, single-line format `<emoji> <type>(<scope>): <description>`, w
 ```
 
 ---
+
+## ✦ comprehensive-review: a staff-engineer ship gate
+
+Not another code reviewer, it **composes** the built-in `/code-review` and adds what it lacks. Run it before you ship:
+
+1. **Design review** (when no code exists yet), critique the approach before you build. `/code-review` cannot do this.
+2. **Code review**, delegates the diff to `/code-review` (its effort tiers, cloud review, `--fix`).
+3. **Self-verify**, every finding must survive being argued against, so it does not cry wolf.
+4. **Verdict**, one decision: REJECT / NEEDS WORK / APPROVE, plus what is blocking ship.
+
+For a raw diff review, call `/code-review` directly. Use this when you want design judgment plus a go/no-go.
 
 ## Contributing
 
