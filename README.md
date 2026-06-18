@@ -103,6 +103,20 @@ Not another code reviewer, it **composes** the built-in `/code-review` and adds 
 
 For a raw diff review, call `/code-review` directly. Use this when you want design judgment plus a go/no-go.
 
+---
+
+## ✦ md2pdf: Markdown → print-ready PDF
+
+No LaTeX, no fiddling. One command turns a `.md` into a clean PDF, using pandoc plus a headless Chromium renderer (the same engine your browser prints with).
+
+```bash
+md2pdf.sh answers.md submission.pdf   # explicit output
+md2pdf.sh notes.md                    # → notes.pdf next to it
+md2pdf.sh a.md b.md c.md              # batch, each → its own .pdf
+```
+
+Built for graded submissions: it **warns on em dashes** (the AI tell), **reports the page count** and flags going over 2 pages, and auto-detects whatever Chromium-family browser you have (`CHROME_BIN` to force one). Restyle every PDF by editing a single `scripts/md2pdf.css`.
+
 ## Contributing
 
 Skills that solve real problems are welcome.
