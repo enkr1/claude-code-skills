@@ -14,6 +14,7 @@ Skills I built for my own Claude Code workflow and kept reaching for. Sharing th
 | [**threads**](skills/threads/SKILL.md) | A branching task tracker that never drops a ball: per-chat trees, a global view, auto-reinjected so Claude never forgets. |
 | [**commit**](skills/commit/SKILL.md) | Gitmoji and conventional commits, with anti-AI-signature rules. |
 | [**comprehensive-review**](skills/comprehensive-review/SKILL.md) | Staff-engineer ship gate: reviews the design, composes the built-in `/code-review` for the diff, then gives one decisive verdict. |
+| [**md2pdf**](skills/md2pdf/SKILL.md) | Markdown to clean, print-ready PDF via pandoc and headless Chromium (no LaTeX). Cross-browser, batch, with em-dash and page-count checks. |
 
 ---
 
