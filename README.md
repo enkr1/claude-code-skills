@@ -39,6 +39,7 @@ A branching task tracker that lives inside Claude Code, built for ADHD and nonli
 - **Global zoom-out:** `threads global` shows every chat's open work, grouped by project.
 - **Auto-reinjected:** a `UserPromptSubmit` hook feeds your open threads back into context every turn. This is the part a plain markdown skill cannot do, and it is why Claude stops forgetting parked work.
 - **No dropped balls:** a task leaves the tree only when it is `done` or you kill it. Never silently. Stale ones are flagged, not deleted.
+- **Self-pruning:** finishing a parent (`done`) shifts its children up to the grandparent and drops the parent, so the tree stays shallow and shows only what is still open. `compact` runs that sweep across a whole backlog at once; done leaves stay as `✓`.
 
 Glyphs: `▸` here, `●` active, `○` paused, `✓` done, `✕` blocked, `◦` snoozed.
 
@@ -47,7 +48,7 @@ Glyphs: `▸` here, `●` active, `○` paused, `✓` done, `✕` blocked, `◦`
 "switch to X", "bt" / "backtrack", "done", "snooze X", "where am i", or just dumping new tasks all drive it. Or call the CLI directly:
 
 ```
-threads  capture "<name>" | switch "<q>" | bt | done [q] | snooze "<q>" [days] | tree | global
+threads  capture "<name>" | switch "<q>" | bt | done [q] | snooze "<q>" [days] | compact | tree | global
 ```
 
 ### Install threads

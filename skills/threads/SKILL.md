@@ -20,6 +20,7 @@ node ~/.claude/skills/threads/bin/threads.mjs <command>
 - When the user states an actionable request, `capture` it. Several requests in one message means several captures.
 - A request blurted while you are mid-task auto-nests as a child of the current task.
 - A task leaves the tree only two ways: `done`, or the user explicitly kills it. Never silently.
+- `done` on a parent drops it and shifts its children up to the grandparent, so open work is never left stranded under a finished branch (a done *leaf* stays as a `✓`). Run `compact` to apply that sweep to an existing tree where parents were finished before their children.
 - After capturing, keep doing what the user actually asked. The rest wait in the queue, surfaced 1-3 at a time, never the whole backlog.
 
 ## Commands
@@ -29,8 +30,9 @@ node ~/.claude/skills/threads/bin/threads.mjs <command>
 | `capture "<name>"` | file a new task (auto-nests under current) |
 | `switch "<query>"` | resume an existing task by name |
 | `bt` / `backtrack` | return to the parent task |
-| `done ["<query>"]` | complete the current (or matched) task |
+| `done ["<query>"]` | complete a task; a done parent's children shift up to the grandparent |
 | `snooze "<query>" [days]` | defer a task; it resurfaces later |
+| `compact` | sweep finished branches: drop done parents + shift their children up (done leaves stay) |
 | `tree` | this chat's tree (the `▸` marks where you are) |
 | `global` | every chat's tree, grouped by project (zoom out) |
 | `context` | compact state (the hook injects this each turn) |

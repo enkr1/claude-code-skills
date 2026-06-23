@@ -6,7 +6,7 @@
 import { homedir } from 'node:os';
 import { join, basename } from 'node:path';
 import { load, save } from '../src/io.mjs';
-import { capture, switchTo, backtrack, complete, snooze } from '../src/tree.mjs';
+import { capture, switchTo, backtrack, complete, snooze, compactNodes } from '../src/tree.mjs';
 import { render, summarize, renderGlobal } from '../src/render.mjs';
 import { view, merge } from '../src/session.mjs';
 
@@ -44,6 +44,7 @@ const v = view(state, session);
 const READ_ONLY = new Set(['tree', 'global', 'context', 'statusline', 'current', 'help', undefined]);
 let nv = v;
 let output = '';
+let handled = false; // ops that save the whole state themselves (e.g. compact) set this
 
 switch (cmd) {
   case 'capture':
@@ -83,11 +84,28 @@ switch (cmd) {
   case 'current':
     output = v.current && v.nodes[v.current] ? v.nodes[v.current].name : '(none)';
     break;
+  case 'compact': {
+    // Global sweep across every chat: drop done parents and shift their children
+    // up to the grandparent (done leaves stay). Saves the whole state directly,
+    // not session-scoped, so the merge layer is bypassed.
+    const nodes = compactNodes(state.nodes);
+    const sessions = { ...state.sessions };
+    for (const sid of Object.keys(sessions)) {
+      if (sessions[sid].current && !nodes[sessions[sid].current]) {
+        sessions[sid] = { ...sessions[sid], current: null };
+      }
+    }
+    const next = { ...state, nodes, sessions };
+    await save(FILE, next);
+    output = render(view(next, session), { label: project, now });
+    handled = true;
+    break;
+  }
   default:
-    output = 'threads: capture <name> | switch <q> | bt | done [q] | snooze <q> [days] | tree | global | context | statusline | current';
+    output = 'threads: capture <name> | switch <q> | bt | done [q] | snooze <q> [days] | compact | tree | global | context | statusline | current';
 }
 
-if (!READ_ONLY.has(cmd)) {
+if (!READ_ONLY.has(cmd) && !handled) {
   const next = merge(state, session, nv, { project, now });
   await save(FILE, next);
   output = render(view(next, session), { label: project, now }); // show this chat's updated tree

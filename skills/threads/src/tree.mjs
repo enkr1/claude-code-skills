@@ -84,9 +84,63 @@ export function backtrack(tree, now) {
 export function complete(tree, now, id = tree.current) {
   if (!id || !tree.nodes[id]) return tree;
   const nodes = { ...tree.nodes };
-  const node = patch(nodes[id], { status: 'done', lastTouched: now });
-  nodes[id] = node;
-  const current = id === tree.current ? returnToParent(nodes, node, now) : tree.current;
+  const node = nodes[id];
+  const kids = Object.values(nodes).filter((n) => n.parent === id);
+
+  if (kids.length > 0) {
+    // A finished PARENT leaves the tree and its children shift up to the
+    // grandparent, so open work never stays stranded under a done branch.
+    for (const kid of kids) nodes[kid.id] = patch(kid, { parent: node.parent });
+    delete nodes[id];
+    if (node.parent && nodes[node.parent]) {
+      nodes[node.parent] = patch(nodes[node.parent], { status: 'active', lastTouched: now });
+    }
+    const current =
+      id === tree.current ? (node.parent && nodes[node.parent] ? node.parent : null) : tree.current;
+    return { ...tree, current, nodes };
+  }
+
+  // A finished LEAF stays as visible done history; current returns to its parent.
+  nodes[id] = patch(node, { status: 'done', lastTouched: now });
+  const current = id === tree.current ? returnToParent(nodes, nodes[id], now) : tree.current;
+  return { ...tree, current, nodes };
+}
+
+/**
+ * Pure node-map sweep: drop every DONE node that still has children, shifting
+ * those children up to the done node's parent, repeated until none remain. Done
+ * LEAVES are kept (visible history). Children of a node share its session, so
+ * promotion stays in-chat and this is safe across the whole multi-chat map.
+ * @param {Record<string, object>} input nodes map
+ * @returns {Record<string, object>} new nodes map
+ */
+export function compactNodes(input) {
+  const nodes = { ...input };
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const node of Object.values(nodes)) {
+      if (node.status !== 'done') continue;
+      const kids = Object.values(nodes).filter((n) => n.parent === node.id);
+      if (kids.length === 0) continue;
+      for (const kid of kids) nodes[kid.id] = patch(kid, { parent: node.parent });
+      delete nodes[node.id];
+      changed = true;
+      break; // structure changed; restart the scan
+    }
+  }
+  return nodes;
+}
+
+/**
+ * Compact one chat's tree (see {@link compactNodes}); clears current only if it
+ * somehow pointed at a removed node (it never should — current is never done).
+ * @param {object} tree
+ * @returns {object} new tree
+ */
+export function compact(tree) {
+  const nodes = compactNodes(tree.nodes);
+  const current = tree.current && !nodes[tree.current] ? null : tree.current;
   return { ...tree, current, nodes };
 }
 
