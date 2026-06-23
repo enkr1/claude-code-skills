@@ -25,7 +25,7 @@ A branching task tracker that lives inside Claude Code, built for ADHD and nonli
 **`here`** is your default glance, just where you are and one layer around it:
 
 ```
-  threads · form-check                      6 open · 0 parked
+  threads · web-app                         6 open · 0 parked
   ───────────────────────────────────────────────────────────
   … ship v2 › payments
   ▸ ● refund flow
@@ -39,13 +39,13 @@ A branching task tracker that lives inside Claude Code, built for ADHD and nonli
 ```
   threads · all                             2 chats · 5 open
   ───────────────────────────────────────────────────────────
-  ◆ form-check · deploy
-  ○ fix auth
+  ◆ dashboard · ship v2
+  ○ ship v2
   ├─ ○ write tests
-▸ └─ ● deploy
-  ◆ bakery · menu page
-  ○ menu page
-▸ └─ ● checkout flow
+▸ └─ ● fix auth redirect
+  ◆ side-project · launch
+  ○ launch
+▸ └─ ● wire up payments
   ───────────────────────────────────────────────────────────
 ```
 
