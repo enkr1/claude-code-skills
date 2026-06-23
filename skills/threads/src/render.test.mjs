@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { statusGlyph, formatDuration, render, summarize, renderGlobal } from './render.mjs';
+import { statusGlyph, formatDuration, render, summarize, renderGlobal, renderHere } from './render.mjs';
 
 describe('statusGlyph', () => {
   it('maps each status to its style-A glyph', () => {
@@ -138,5 +138,51 @@ describe('render (nested + current child)', () => {
 
   it('keeps non-current rows on a 2-space gutter', () => {
     expect(out()).toContain('  ├─ ○ core ops');
+  });
+});
+
+describe('renderHere', () => {
+  const now = 100 * 24 * 60 * 60_000;
+  // r -> p -> cur -> { k1(leaf), k2 -> g1 -> g2 }
+  const nodes = {
+    r:   { id: 'r',   name: 'root',      parent: null,  status: 'active', started: now },
+    p:   { id: 'p',   name: 'parent',    parent: 'r',   status: 'active', started: now },
+    cur: { id: 'cur', name: 'current',   parent: 'p',   status: 'active', started: now },
+    k1:  { id: 'k1',  name: 'child one', parent: 'cur', status: 'active', started: now },
+    k2:  { id: 'k2',  name: 'child two', parent: 'cur', status: 'paused', started: now },
+    g1:  { id: 'g1',  name: 'grandkid',  parent: 'k2',  status: 'active', started: now },
+    g2:  { id: 'g2',  name: 'great',     parent: 'g1',  status: 'active', started: now },
+  };
+  const opts = { label: 'demo', now };
+
+  it('shows breadcrumb + current + direct children, folding deeper subtrees to a hint', () => {
+    const out = renderHere({ current: 'cur', nodes }, opts);
+    expect(out).toContain('… root › parent'); // ancestors collapse into a breadcrumb
+    expect(out).toContain('▸ ● current'); // current is marked
+    expect(out).toContain('child one'); // direct child shown
+    expect(out).toContain('child two'); // direct child shown
+    expect(out).toContain('(+2 deeper)'); // k2's subtree folded to a count
+    expect(out).not.toContain('grandkid'); // deeper nodes are hidden
+    expect(out).not.toContain('great');
+  });
+
+  it('omits the breadcrumb when current is a root', () => {
+    const out = renderHere({ current: 'r', nodes }, opts);
+    expect(out).not.toContain('›');
+    expect(out).toContain('▸ ● root');
+    expect(out).toContain('parent'); // its direct child
+  });
+
+  it('shows current with no child lines and no siblings when current is a leaf', () => {
+    const out = renderHere({ current: 'k1', nodes }, opts);
+    expect(out).toContain('… root › parent › current'); // full ancestor path
+    expect(out).toContain('▸ ● child one');
+    expect(out).not.toContain('child two'); // a sibling is not shown: 1 layer is down-only
+  });
+
+  it('falls back to the open roots when there is no current', () => {
+    const out = renderHere({ current: null, nodes }, opts);
+    expect(out).toContain('root');
+    expect(out).not.toContain('▸'); // nothing is "here"
   });
 });

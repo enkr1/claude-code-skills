@@ -7,7 +7,7 @@ description: ADHD-friendly branching task tracker. Use when the user dumps multi
 
 A persistent, branching task tree so neither you nor the user loses track of work. The user has ADHD and dumps branching ideas faster than they can file them; your job is to file them so nothing is dropped. State lives at `~/.claude/threads.json`. Drive it with the CLI, never hand-edit the JSON.
 
-**Per-chat by default:** each chat is its own tree with its own `current` (scoped by `CLAUDE_CODE_SESSION_ID`), so chats never tangle. bare `threads` (or `tree`) shows THIS chat; `all` zooms out to every chat's tree.
+**Per-chat by default:** each chat is its own tree with its own `current` (scoped by `CLAUDE_CODE_SESSION_ID`), so chats never tangle. bare `threads` (or `here`) shows where you are plus one layer; `all` zooms out to every chat's full tree.
 
 Run the CLI with node:
 
@@ -33,8 +33,8 @@ node ~/.claude/skills/threads/bin/threads.mjs <command>
 | `done ["<query>"]` | complete a task; a done parent's children shift up to the grandparent |
 | `snooze "<query>" [days]` | defer a task; it resurfaces later |
 | `compact` | sweep finished branches: drop done parents + shift their children up (done leaves stay) |
-| `tree` (or no arg) | this chat's tree (the `▸` marks where you are) |
-| `all` | every chat's tree, grouped by project (zoom out) |
+| `here` (or no arg) | where you are + one layer: breadcrumb, current, direct children (the `▸` marks you) |
+| `all` | every chat's full tree, grouped by project (zoom out) |
 
 ## Triggers
 
@@ -42,7 +42,7 @@ node ~/.claude/skills/threads/bin/threads.mjs <command>
 - "switch to X", "back to X" -> `switch "X"`
 - "done", "finished", "that's fixed" -> `done`
 - "snooze X", "not now", "later" -> `snooze "X"`
-- "where am i", "show tree", "what's open" -> `tree`
+- "where am i", "show tree", "what's open" -> `here`
 - the user dumps one or more new tasks -> `capture` each
 
 ## Glyphs (emoji-free, single-width so columns align)

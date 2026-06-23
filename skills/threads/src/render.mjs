@@ -139,3 +139,67 @@ export function renderGlobal(state, { now }) {
   if (chats === 0) return [header, RULE, '  (nothing open anywhere)'].join('\n');
   return [header, RULE, '', ...blocks, RULE, '  nothing dropped'].join('\n');
 }
+
+/** Ancestors of a node, root-first down to its parent (the node itself excluded). */
+function ancestorsOf(nodes, node) {
+  const chain = [];
+  let pid = node.parent;
+  while (pid && nodes[pid]) {
+    chain.unshift(nodes[pid]);
+    pid = nodes[pid].parent;
+  }
+  return chain;
+}
+
+/** Total descendants under a node (children + their children + ...). */
+function descendantCount(nodes, id) {
+  return Object.values(nodes)
+    .filter((n) => n.parent === id)
+    .reduce((sum, k) => sum + 1 + descendantCount(nodes, k.id), 0);
+}
+
+/** Breadcrumb names are orientation, not content: cap each so the line stays short. */
+function crumb(name) {
+  return name.length > 24 ? `${name.slice(0, 23)}…` : name;
+}
+
+/**
+ * Focused "here" view: where you are plus one layer around it. A breadcrumb of
+ * ancestors (capped), the current node, and its direct children, with deeper
+ * subtrees folded to a "(+N deeper)" hint so the output stays bounded no matter
+ * how deep the chat runs. The header still reports the chat's full open/parked
+ * counts, so work parked elsewhere is never silently invisible. With no current,
+ * lists the roots (the top layer).
+ * @param {{current: string|null, nodes: Record<string, object>}} tree single-session subtree
+ * @param {{label: string, now: number}} opts
+ * @returns {string}
+ */
+export function renderHere(tree, { label, now }) {
+  const nodes = tree.nodes;
+  const { open, parked } = counts(tree);
+  const head = padBetween(`  threads · ${label}`, `${open} open · ${parked} parked`);
+  const dur = (n) => (n.status === 'snoozed' ? 'parked' : n.status === 'done' ? '' : formatDuration(now - n.started));
+  const fold = (id) => {
+    const d = descendantCount(nodes, id);
+    return d ? `  (+${d} deeper)` : '';
+  };
+  const cur = tree.current && nodes[tree.current] ? nodes[tree.current] : null;
+  const lines = [];
+
+  if (!cur) {
+    const roots = Object.values(nodes).filter((n) => !n.parent || !nodes[n.parent]);
+    for (const r of roots) lines.push(padBetween(`  ${statusGlyph(r.status)} ${r.name}${fold(r.id)}`, dur(r)));
+    if (lines.length === 0) lines.push('  (nowhere yet — capture or switch to a task)');
+    return [head, RULE, ...lines, RULE, '  nothing dropped'].join('\n');
+  }
+
+  const anc = ancestorsOf(nodes, cur);
+  if (anc.length) lines.push(`  … ${anc.map((a) => crumb(a.name)).join(' › ')}`);
+  lines.push(padBetween(`▸ ${statusGlyph(cur.status)} ${cur.name}`, dur(cur)));
+  const kids = Object.values(nodes).filter((n) => n.parent === cur.id);
+  kids.forEach((k, i) => {
+    const connector = i === kids.length - 1 ? '└─ ' : '├─ ';
+    lines.push(padBetween(`     ${connector}${statusGlyph(k.status)} ${k.name}${fold(k.id)}`, dur(k)));
+  });
+  return [head, RULE, ...lines, RULE, '  nothing dropped'].join('\n');
+}

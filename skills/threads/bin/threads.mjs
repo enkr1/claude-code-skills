@@ -7,7 +7,7 @@ import { homedir } from 'node:os';
 import { join, basename } from 'node:path';
 import { load, save } from '../src/io.mjs';
 import { capture, switchTo, backtrack, complete, snooze, compactNodes } from '../src/tree.mjs';
-import { render, renderGlobal } from '../src/render.mjs';
+import { render, renderGlobal, renderHere } from '../src/render.mjs';
 import { view, merge } from '../src/session.mjs';
 
 const FILE = process.env.THREADS_FILE || join(homedir(), '.claude', 'threads.json');
@@ -55,9 +55,9 @@ switch (cmd) {
     nv = snooze(v, resolveId(v, query), now + days * 86_400_000, now);
     break;
   }
-  case undefined: // bare `threads` defaults to this chat's tree
-  case 'tree':
-    output = render(v, { label: project, now });
+  case undefined: // bare `threads` shows the focused "here" view
+  case 'here':
+    output = renderHere(v, { label: project, now });
     break;
   case 'all':
     output = renderGlobal(state, { now });
@@ -79,12 +79,12 @@ switch (cmd) {
     break;
   }
   default:
-    output = 'threads: capture <name> | switch <q> | bt | done [q] | snooze <q> [days] | compact | tree | all';
+    output = 'threads: capture <name> | switch <q> | bt | done [q] | snooze <q> [days] | compact | here | all';
 }
 
 if (WRITES.has(cmd)) {
   const next = merge(state, session, nv, { project, now });
   await save(FILE, next);
-  output = render(view(next, session), { label: project, now }); // show this chat's updated tree
+  output = renderHere(view(next, session), { label: project, now }); // focused view after a move
 }
 if (output) console.log(output);
