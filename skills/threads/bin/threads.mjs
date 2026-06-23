@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 // threads CLI: thin wiring over the tested pure ops + session router + io + render.
 // Each chat (CLAUDE_CODE_SESSION_ID) is its own tree with its own current; all
-// chats share one global file so you can zoom out with `global`.
+// chats share one global file so you can zoom out with `all`.
 
 import { homedir } from 'node:os';
 import { join, basename } from 'node:path';
 import { load, save } from '../src/io.mjs';
 import { capture, switchTo, backtrack, complete, snooze, compactNodes } from '../src/tree.mjs';
-import { render, summarize, renderGlobal } from '../src/render.mjs';
+import { render, renderGlobal } from '../src/render.mjs';
 import { view, merge } from '../src/session.mjs';
 
 const FILE = process.env.THREADS_FILE || join(homedir(), '.claude', 'threads.json');
@@ -29,37 +29,23 @@ function resolveId(tree, query) {
   return hit?.id ?? null;
 }
 
-function statusline(tree) {
-  const open = Object.values(tree.nodes).filter(
-    (n) => n.status === 'active' || n.status === 'paused' || n.status === 'blocked',
-  );
-  if (open.length === 0) return 'threads: idle';
-  const cur = tree.current && tree.nodes[tree.current] ? tree.nodes[tree.current].name : 'idle';
-  const next = open.filter((n) => n.id !== tree.current).slice(0, 2).map((n) => n.name);
-  return `▸ ${cur}${next.length ? ` · next: ${next.join(', ')}` : ''} · ${open.length} open`;
-}
-
 const state = await load(FILE);
 const v = view(state, session);
-const READ_ONLY = new Set(['tree', 'global', 'context', 'statusline', 'current', 'help', undefined]);
+const WRITES = new Set(['capture', 'switch', 'bt', 'done', 'snooze']); // only these mutate + save
 let nv = v;
 let output = '';
-let handled = false; // ops that save the whole state themselves (e.g. compact) set this
 
 switch (cmd) {
   case 'capture':
-  case 'add':
     nv = capture(v, { name: arg, project, now });
     break;
   case 'switch':
     nv = switchTo(v, resolveId(v, arg), now);
     break;
   case 'bt':
-  case 'backtrack':
     nv = backtrack(v, now);
     break;
   case 'done':
-  case 'complete':
     nv = complete(v, now, resolveId(v, arg));
     break;
   case 'snooze': {
@@ -69,20 +55,12 @@ switch (cmd) {
     nv = snooze(v, resolveId(v, query), now + days * 86_400_000, now);
     break;
   }
+  case undefined: // bare `threads` defaults to this chat's tree
   case 'tree':
     output = render(v, { label: project, now });
     break;
-  case 'global':
+  case 'all':
     output = renderGlobal(state, { now });
-    break;
-  case 'context':
-    output = summarize(v, { label: project });
-    break;
-  case 'statusline':
-    output = statusline(v);
-    break;
-  case 'current':
-    output = v.current && v.nodes[v.current] ? v.nodes[v.current].name : '(none)';
     break;
   case 'compact': {
     // Global sweep across every chat: drop done parents and shift their children
@@ -98,14 +76,13 @@ switch (cmd) {
     const next = { ...state, nodes, sessions };
     await save(FILE, next);
     output = render(view(next, session), { label: project, now });
-    handled = true;
     break;
   }
   default:
-    output = 'threads: capture <name> | switch <q> | bt | done [q] | snooze <q> [days] | compact | tree | global | context | statusline | current';
+    output = 'threads: capture <name> | switch <q> | bt | done [q] | snooze <q> [days] | compact | tree | all';
 }
 
-if (!READ_ONLY.has(cmd) && !handled) {
+if (WRITES.has(cmd)) {
   const next = merge(state, session, nv, { project, now });
   await save(FILE, next);
   output = render(view(next, session), { label: project, now }); // show this chat's updated tree

@@ -11,7 +11,7 @@ Skills I built for my own Claude Code workflow and kept reaching for. Sharing th
 
 | Skill | What it does |
 |-------|--------------|
-| [**threads**](skills/threads/SKILL.md) | A branching task tracker that never drops a ball: per-chat trees, a global view, auto-reinjected so Claude never forgets. |
+| [**threads**](skills/threads/SKILL.md) | A branching task tracker that never drops a ball: per-chat trees, an all-chats view, auto-reinjected so Claude never forgets. |
 | [**commit**](skills/commit/SKILL.md) | Gitmoji and conventional commits, with anti-AI-signature rules. |
 | [**comprehensive-review**](skills/comprehensive-review/SKILL.md) | Staff-engineer ship gate: reviews the design, composes the built-in `/code-review` for the diff, then gives one decisive verdict. |
 | [**md2pdf**](skills/md2pdf/SKILL.md) | Markdown to clean, print-ready PDF via pandoc and headless Chromium (no LaTeX). Cross-browser, batch, with em-dash and page-count checks. |
@@ -23,7 +23,7 @@ Skills I built for my own Claude Code workflow and kept reaching for. Sharing th
 A branching task tracker that lives inside Claude Code, built for ADHD and nonlinear work. You dump branching ideas faster than you can file them; threads captures each one into a tree, reminds Claude of your open threads on every prompt so it stops forgetting, and never drops a ball.
 
 ```
-  threads · global                          2 chats · 5 open
+  threads · all                             2 chats · 5 open
   ───────────────────────────────────────────────────────────
   ◆ form-check · deploy
   ○ fix auth
@@ -36,7 +36,7 @@ A branching task tracker that lives inside Claude Code, built for ADHD and nonli
 ```
 
 - **Per-chat trees:** each conversation is its own tree with its own "you are here" (`▸`). Chats never tangle.
-- **Global zoom-out:** `threads global` shows every chat's open work, grouped by project.
+- **All-chats zoom-out:** `threads all` shows every chat's open work, grouped by project.
 - **Auto-reinjected:** a `UserPromptSubmit` hook feeds your open threads back into context every turn. This is the part a plain markdown skill cannot do, and it is why Claude stops forgetting parked work.
 - **No dropped balls:** a task leaves the tree only when it is `done` or you kill it. Never silently. Stale ones are flagged, not deleted.
 - **Self-pruning:** finishing a parent (`done`) shifts its children up to the grandparent and drops the parent, so the tree stays shallow and shows only what is still open. `compact` runs that sweep across a whole backlog at once; done leaves stay as `✓`.
@@ -48,7 +48,7 @@ Glyphs: `▸` here, `●` active, `○` paused, `✓` done, `✕` blocked, `◦`
 "switch to X", "bt" / "backtrack", "done", "snooze X", "where am i", or just dumping new tasks all drive it. Or call the CLI directly:
 
 ```
-threads  capture "<name>" | switch "<q>" | bt | done [q] | snooze "<q>" [days] | compact | tree | global
+threads  capture "<name>" | switch "<q>" | bt | done [q] | snooze "<q>" [days] | compact | tree (default) | all
 ```
 
 ### Install threads

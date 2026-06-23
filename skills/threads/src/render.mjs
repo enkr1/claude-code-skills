@@ -135,7 +135,7 @@ export function renderGlobal(state, { now }) {
     blocks.push(`  ◆ ${project} · ${chatName}`, ...renderBody(sub, now), '');
   }
 
-  const header = padBetween('  threads · global', `${chats} chats · ${totalOpen} open`);
+  const header = padBetween('  threads · all', `${chats} chats · ${totalOpen} open`);
   if (chats === 0) return [header, RULE, '  (nothing open anywhere)'].join('\n');
   return [header, RULE, '', ...blocks, RULE, '  nothing dropped'].join('\n');
 }

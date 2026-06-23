@@ -104,9 +104,9 @@ describe('renderGlobal', () => {
     },
   };
 
-  it('shows every chat that has open work, with project labels and a global header', () => {
+  it('shows every chat that has open work, with project labels and an all-chats header', () => {
     const out = renderGlobal(state, { now });
-    expect(out).toContain('global');
+    expect(out).toContain('threads · all');
     expect(out).toContain('fix auth');
     expect(out).toContain('menu page');
     expect(out).toContain('form-check');
