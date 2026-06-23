@@ -22,6 +22,20 @@ Skills I built for my own Claude Code workflow and kept reaching for. Sharing th
 
 A branching task tracker that lives inside Claude Code, built for ADHD and nonlinear work. You dump branching ideas faster than you can file them; threads captures each one into a tree, reminds Claude of your open threads on every prompt so it stops forgetting, and never drops a ball.
 
+**`here`** is your default glance, just where you are and one layer around it:
+
+```
+  threads · form-check                      6 open · 0 parked
+  ───────────────────────────────────────────────────────────
+  … ship v2 › payments
+  ▸ ● refund flow
+     ├─ ○ proration math
+     └─ ○ webhook retry  (+3 deeper)
+  ───────────────────────────────────────────────────────────
+```
+
+**`all`** zooms out to every chat's full tree, grouped by project:
+
 ```
   threads · all                             2 chats · 5 open
   ───────────────────────────────────────────────────────────
@@ -36,8 +50,6 @@ A branching task tracker that lives inside Claude Code, built for ADHD and nonli
 ```
 
 - **Per-chat trees:** each conversation is its own tree with its own "you are here" (`▸`). Chats never tangle.
-- **Focused by default:** bare `threads` (or `here`) shows just where you are — a breadcrumb up, your current task, and its direct children — so deep chains stay readable. `all` zooms out when you want everything.
-- **All-chats zoom-out:** `threads all` shows every chat's open work, grouped by project.
 - **Auto-reinjected:** a `UserPromptSubmit` hook feeds your open threads back into context every turn. This is the part a plain markdown skill cannot do, and it is why Claude stops forgetting parked work.
 - **No dropped balls:** a task leaves the tree only when it is `done` or you kill it. Never silently. Stale ones are flagged, not deleted.
 - **Self-pruning:** finishing a parent (`done`) shifts its children up to the grandparent and drops the parent, so the tree stays shallow and shows only what is still open. `compact` runs that sweep across a whole backlog at once; done leaves stay as `✓`.

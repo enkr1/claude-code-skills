@@ -134,7 +134,7 @@ export function compactNodes(input) {
 
 /**
  * Compact one chat's tree (see {@link compactNodes}); clears current only if it
- * somehow pointed at a removed node (it never should — current is never done).
+ * somehow pointed at a removed node (it never should; current is never done).
  * @param {object} tree
  * @returns {object} new tree
  */

@@ -189,7 +189,7 @@ export function renderHere(tree, { label, now }) {
   if (!cur) {
     const roots = Object.values(nodes).filter((n) => !n.parent || !nodes[n.parent]);
     for (const r of roots) lines.push(padBetween(`  ${statusGlyph(r.status)} ${r.name}${fold(r.id)}`, dur(r)));
-    if (lines.length === 0) lines.push('  (nowhere yet — capture or switch to a task)');
+    if (lines.length === 0) lines.push('  (nowhere yet: capture or switch to a task)');
     return [head, RULE, ...lines, RULE, '  nothing dropped'].join('\n');
   }
 
