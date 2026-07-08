@@ -16,6 +16,7 @@ Skills I built for my own Claude Code workflow and kept reaching for. Sharing th
 | [**comprehensive-review**](skills/comprehensive-review/SKILL.md) | Staff-engineer ship gate: reviews the design, composes the built-in `/code-review` for the diff, then gives one decisive verdict. |
 | [**md2pdf**](skills/md2pdf/SKILL.md) | Markdown to clean, print-ready PDF via pandoc and headless Chromium (no LaTeX). Cross-browser, batch, with em-dash and page-count checks. |
 | [**github-issue**](skills/github-issue/SKILL.md) | Full issue lifecycle with org-native Type/Priority/Effort fields + a Project board: create/start/end set every field via `gh` + GraphQL (no `--type` gap). Credential-free (uses your own `gh auth`); copy `config.example.json` to your own `config.json`. |
+| [**github-pr**](skills/github-pr/SKILL.md) | One PR skill that reads your branch and auto-routes: a feature branch runs the finish pipeline (simplify → review → tests → verify → E2E → commit → PR → close issue) to your integration branch; the integration branch cuts a release PR to main. Every PR comes out identically shaped. Config-driven, credential-free; pairs with github-issue. |
 
 ---
 
@@ -131,6 +132,33 @@ md2pdf.sh a.md b.md c.md              # batch, each → its own .pdf
 ```
 
 Built for graded submissions: it **warns on em dashes** (the AI tell), **reports the page count** and flags going over 2 pages, and auto-detects whatever Chromium-family browser you have (`CHROME_BIN` to force one). Restyle every PDF by editing a single `scripts/md2pdf.css`.
+
+---
+
+## ✦ github-pr: one PR skill for the whole flow
+
+You don't have a "PR to dev" skill and a separate "release to main" skill. You have **one** skill that reads the branch you're on and picks the pipeline for you:
+
+```
+/github-pr
+  ├─ on a feature branch  →  FEATURE pipeline  →  PR to your integration branch (dev)
+  ├─ on the integration branch  →  RELEASE pipeline  →  draft PR to main
+  └─ on main  →  refuses (nothing to PR from here)
+```
+
+The **FEATURE** pipeline is a finish line with hard gates between phases, each must pass before the next:
+
+```
+simplify → review → tests → verify → E2E → commit → PR → close issue → watch deploy
+```
+
+It detects what your project actually supports (i18n, skeleton components, unit tests, lint, a browser for E2E) and only runs the checks that apply, so the same skill drops into a plain repo or a batteries-included one. Bug-fix PRs get a **hard gate**: reproduce the break, then confirm it gone on a running build, never ship a fix on "looks right."
+
+The **RELEASE** pipeline cuts a `dev → main` PR: analyses the commit range, handles the changelog the way *you* configure (`auto` = let CI generate notes, `manual` = maintain a `CHANGELOG.md`, or `none`), verifies every commit made it into the PR body, and opens it as a draft so a human still holds the merge.
+
+Why one skill instead of two: **every PR comes out identically shaped.** Gitmoji-first title, the right base branch, assignee, label, reviewer, a consistent body template, and a hygiene pass (no em dashes, no leaked names) all live in one place, so they can't drift apart the way two copies do.
+
+Config-driven and credential-free (your own `gh auth`). Everything project-specific, app directory, branch names, locales, deploy-watch command, lives in a gitignored `config.json`; copy `config.example.json` and fill in your own. Pairs with [**github-issue**](skills/github-issue/SKILL.md), it closes the linked issue and sets its board fields when the PR merges.
 
 ## Contributing
 

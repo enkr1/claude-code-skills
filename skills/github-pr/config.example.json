@@ -1,0 +1,31 @@
+{
+  "_setup": "Copy this file to config.json (gitignored) and fill in your own values. No credentials needed: auth is your own `gh auth login`. Every field below is optional — omit one and the skill falls back to a sensible default or auto-detects (branch names default to dev/main; app_dir defaults to repo root; verify commands auto-detect from package.json).",
+  "app_dir": ".",
+  "integration_branch": "dev",
+  "release_branch": "main",
+  "assignee": "YOUR_GH_HANDLE",
+  "reviewer": null,
+  "issue_helper": null,
+  "verify": {
+    "_comment": "Commands run in app_dir. {file} is substituted for single-file test runs. Omit any to auto-detect from package.json scripts.",
+    "typecheck": "npx tsc --noEmit",
+    "lint": "npm run lint",
+    "build": "npm run build",
+    "test": "npm test -- {file}"
+  },
+  "test_policy": "single-file-or-ci",
+  "i18n_locales": ["en"],
+  "deploy": {
+    "_comment": "Optional. A background command that watches your deploy and self-notifies. {branch} is substituted. Omit to skip the watch phase entirely.",
+    "watch_cmd": null,
+    "watch_on": ["integration", "release"]
+  },
+  "release": {
+    "_comment": "changelog: 'manual' (maintain changelog_path), 'auto' (CI generates notes, skip the manual step), or 'none'. draft: open release PRs as draft for review.",
+    "changelog": "manual",
+    "changelog_path": "CHANGELOG.md",
+    "title_prefix": "Release: ",
+    "draft": true,
+    "native_automerge": false
+  }
+}
