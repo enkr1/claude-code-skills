@@ -1,0 +1,69 @@
+{
+  "owner": "YOUR_ORG_OR_USER",
+  "repo": "YOUR_REPO",
+  "project_number": "YOUR_PROJECT_NUMBER",
+  "project_id": "PVT_xxx  # gh project view <n> --owner <org> --format json -> .id",
+  "fields": {
+    "status": {
+      "id": "<discover: see references/field-ids.md>",
+      "options": {
+        "backlog": "98683ca1",
+        "todo": "f75ad846",
+        "priority-queue": "5ccd1e35",
+        "in-progress": "47fc9ee4",
+        "testing": "668a8b68",
+        "done": "98236657"
+      }
+    },
+    "priority": {
+      "id": "<discover: see references/field-ids.md>",
+      "options": {
+        "p0": "9e80aae0",
+        "p1": "95d5f221",
+        "p2": "a76278e1"
+      }
+    },
+    "native_priority": {
+      "_comment": "GitHub native issue Priority field — now the SSOT (board P0/P1/P2 is deprecated, kept only for legacy reads). Keyed by native option name; p0/p1/p2 remain as back-compat aliases. Urgent = production block ONLY.",
+      "field_id": "<discover: see references/field-ids.md>",
+      "options": {
+        "urgent": "<discover: see references/field-ids.md>",
+        "high": "<discover: see references/field-ids.md>",
+        "medium": "<discover: see references/field-ids.md>",
+        "low": "<discover: see references/field-ids.md>",
+        "p0": "<discover: see references/field-ids.md>",
+        "p1": "<discover: see references/field-ids.md>",
+        "p2": "<discover: see references/field-ids.md>"
+      }
+    },
+    "effort": {
+      "_comment": "GitHub native issue Effort field (High/Medium/Low). LLM-estimated during triage, never asked of the reporter.",
+      "field_id": "<discover: see references/field-ids.md>",
+      "options": {
+        "high": "<discover: see references/field-ids.md>",
+        "medium": "<discover: see references/field-ids.md>",
+        "low": "<discover: see references/field-ids.md>"
+      }
+    },
+    "start_date": {
+      "id": "<discover: see references/field-ids.md>"
+    },
+    "end_date": {
+      "id": "<discover: see references/field-ids.md>"
+    },
+    "native_start_date": {
+      "_comment": "GitHub native issue Start date (IFD). Dual-written alongside the board Start Date during native migration.",
+      "field_id": "<discover: see references/field-ids.md>"
+    },
+    "native_target_date": {
+      "_comment": "GitHub native issue Target date (IFD). Native has no actual-end field, so the board End Date value is mirrored here as Target date.",
+      "field_id": "<discover: see references/field-ids.md>"
+    }
+  },
+  "types": {
+    "task": "IT_kwDODIMxOc4BluTX",
+    "bug": "IT_kwDODIMxOc4BluTY",
+    "feature": "IT_kwDODIMxOc4BluTZ"
+  },
+  "_setup": "Copy this file to config.json (gitignored) and fill in your own IDs. See references/field-ids.md for the discovery commands. No credentials needed: auth is your own `gh auth login`."
+}

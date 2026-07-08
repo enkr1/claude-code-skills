@@ -15,6 +15,7 @@ Skills I built for my own Claude Code workflow and kept reaching for. Sharing th
 | [**commit**](skills/commit/SKILL.md) | Gitmoji and conventional commits, with anti-AI-signature rules. |
 | [**comprehensive-review**](skills/comprehensive-review/SKILL.md) | Staff-engineer ship gate: reviews the design, composes the built-in `/code-review` for the diff, then gives one decisive verdict. |
 | [**md2pdf**](skills/md2pdf/SKILL.md) | Markdown to clean, print-ready PDF via pandoc and headless Chromium (no LaTeX). Cross-browser, batch, with em-dash and page-count checks. |
+| [**github-issue**](skills/github-issue/SKILL.md) | Full issue lifecycle with org-native Type/Priority/Effort fields + a Project board: create/start/end set every field via `gh` + GraphQL (no `--type` gap). Credential-free (uses your own `gh auth`); copy `config.example.json` to your own `config.json`. |
 
 ---
 
