@@ -97,11 +97,15 @@ Invoke the `commit` skill: gitmoji + conventional, single line, stage only relev
 ```bash
 git push -u origin "$BRANCH"
 ```
-Existing PR → `gh pr edit <N> --body ...`. Else create with **every required field** (this is what keeps PRs uniform):
+Existing PR → `gh pr edit <N> --body ...` (and ensure `CC-local` is present — see below). Else create with **every required field** (this is what keeps PRs uniform):
 ```bash
 gh pr create --base <integration_branch> --title "<gitmoji title>" \
-  --assignee <assignee> [--reviewer <reviewer>] --label <type> --body "..."
+  --assignee <assignee> [--reviewer <reviewer>] --label <type> --label CC-local --body "..."
 ```
+**ALWAYS add `--label CC-local`** (unless a human is running it) — a CC session opened
+this PR, so it carries the CC-env label for the same traceability the linked issue has.
+This was missed repeatedly; the PR is CC-generated just like the issue. Verify `CC-local`
+is on the PR after create/edit — eyeball it, same rule as `issue.py start`.
 **Title MUST start with a gitmoji** and stay under ~70 chars, derived from the branch commits. Body template:
 ```markdown
 ## Summary
@@ -122,6 +126,21 @@ gh pr create --base <integration_branch> --title "<gitmoji title>" \
 
 Closes #<issue>
 ```
+
+**On `Closes #<issue>` here:** integration (`dev`) is not the default branch, so this keyword is **armed-not-fired** — merging the PR to `dev` does NOT close the issue. It closes only when the release PR carries it to `main` (RELEASE §B Step 2a re-collects every open issue in the range). So: keep `Closes #<issue>` in every feature PR (it's the machine-readable link the release step harvests), but don't expect the issue to close at dev-merge time, and never hand-close it early — let the release close it, so "closed" always means "in prod."
+
+**Tag `reviewed` (bright-green label) on the ISSUE** (and the PR). Reaching
+Phase 7 means Phases 1–6 (simplify → review → tests → verify → E2E) all passed,
+so mark the work review-gate-cleared:
+```bash
+gh issue edit <issue> --add-label reviewed   # PRIMARY: the issue is what the user scans for "ready to close"
+gh pr edit <N> --add-label reviewed           # also mark the PR artifact
+```
+Because this skill stops at the open PR in review-gated mode (Phase 8 runs only
+when the user says merge), a `reviewed` label on the still-OPEN issue is the
+at-a-glance "reviewed, ready to close" signal on the board. Distinct from `done`
+(= merged + closed). Do NOT add `reviewed` when review/verify was skipped or
+NEEDS-WORK findings remain — the label must mean the full gate actually passed.
 
 ## Phase 8 — Issue lifecycle (`--skip-issue`)
 Auto-skip if no linked issue. Else, **only when the user wants it merged** (this skill stops at an open PR by default if you're operating in review-gated mode — see the hard rules):
@@ -163,7 +182,37 @@ gh pr create --base <release_branch> --head <integration_branch> \
   --title "<release.title_prefix><Theme 1>, <Theme 2> & <Theme 3>" \
   --assignee <assignee> [--draft if release.draft] --body "..."
 ```
-Body: summary · what's-new grouped by theme (with `#issue` refs) · stats table · collapsible full commit list grouped by type (`feat`/`fix`/`fix(security)`/`style`/`refactor`/`revert`/`docs`) with 7-char SHAs · test plan checkboxes. **No AI-signature trailer.**
+Body: summary · what's-new grouped by theme (with `#issue` refs) · stats table · collapsible full commit list grouped by type (`feat`/`fix`/`fix(security)`/`style`/`refactor`/`revert`/`docs`) with 7-char SHAs · **`Closes #N` lines for every shipped open issue (see Step 2a)** · **Release Regression Gate sign-off** (see Step 2b). **No AI-signature trailer.**
+
+## Step 2a — Collect closing issues (MANDATORY — this is where dev-line issues actually close)
+GitHub only auto-closes an issue when a `Closes #N` keyword lands on the **default branch** (`release_branch`). Feature→integration PRs carry `Closes #N` but it is **armed-not-fired** — integration isn't the default branch. **The release PR is the ONLY place those issues close.** So the release PR body MUST list `Closes #N` for every open issue shipped in the range — do not rely on the per-commit `Closes` or the `#issue` refs in the what's-new section (refs alone don't close).
+
+Build the list mechanically, never by eyeballing subjects (a `(#N)` in a subject is often a **PR** number, not an issue):
+```bash
+# 1. Gather every #N referenced in the range (subjects + Closes/Fixes/Refs in bodies).
+NUMS=$(git log <release>..<integration> --format="%s%n%b" | grep -oiE '#[0-9]+' | tr -d '#' | sort -un)
+# 2. Keep only OPEN ISSUES — drop PRs (gh issue view fails) and already-closed issues.
+for n in $NUMS; do
+  st=$(gh issue view "$n" --json state --jq .state 2>/dev/null) && [ "$st" = "OPEN" ] && echo "Closes #$n"
+done
+```
+Append the resulting `Closes #N` lines to the **end** of the PR body (one per line, blank line before the block). After create, **verify** GitHub registered them:
+```bash
+gh pr view <N> --json closingIssuesReferences --jq '.closingIssuesReferences[].number'
+```
+The printed set MUST equal your open-issue list. Empty when you expected closes = the keywords didn't parse (wrong base branch, or `Ref`/bare `#N` instead of `Closes`) — fix the body.
+
+## Step 2b — Embed the Release Regression Gate / RRG (if `release.regression_gate` configured)
+When `release.regression_gate` is set, append this exit-criteria block to the PR body verbatim (link the configured `doc` / `human_doc`; head it with `release.regression_gate.name` if set, e.g. "RRG"). This is the release's exit criteria: the goal is to confirm **no existing feature regressed as new features ship**.
+```markdown
+## ✅ RRG: Release Regression Gate (exit criteria — must all pass before merge)
+Full steps: `<release.regression_gate.doc>` (🤖 bot) + `<release.regression_gate.human_doc>` (🤚 human)
+- [ ] Pre-flight passed (tsc / build / CI green)
+- [ ] 🤖 Chrome MCP bot track run on the dev deploy — all P0 flows pass
+- [ ] 🤚 Human track run (record audio, snap photo, upload, OAuth, payment, PWA) on iOS + Android + desktop
+- [ ] Interaction matrix re-tested for every surface this release touched (correlated-bug check)
+- [ ] Zero P0 regressions open
+```
 
 ## Step 3 — Verify completeness
 Cross-check every commit is represented:
@@ -175,6 +224,8 @@ Any missing SHA → update the PR body.
 
 ## Step 4 — Draft + hand off
 If `release.draft`: PR is draft (review gate). If `release.native_automerge` is false (default), **do NOT enable auto-merge** — leave it for manual review/merge. Optionally watch the release deploy (§A Phase 9 with `{branch}`=release, if `"release"` ∈ `deploy.watch_on`).
+
+**Regression-gate hold (if `release.regression_gate.block_until_checked`):** the release PR MUST stay a draft until every box in the Step 2b exit-criteria block is ticked. Never mark it ready-for-review, never enable auto-merge, and never merge it while any gate box is unchecked. Server-side branch protection is unavailable on this GitHub plan, so this hold IS the gate — do not bypass it. On hand-off, tell the human: "Release is drafted and held by the Regression Gate. Walk `<doc>` + `<human_doc>`, tick the boxes, then mark ready and merge."
 
 ---
 
