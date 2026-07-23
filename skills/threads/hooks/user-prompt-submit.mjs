@@ -7,6 +7,7 @@
 
 import { homedir } from 'node:os';
 import { join, basename } from 'node:path';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { load } from '../src/io.mjs';
 import { view } from '../src/session.mjs';
 import { summarize } from '../src/render.mjs';
@@ -40,7 +41,31 @@ try {
 
   const hasWork = Object.values(tree.nodes).some((n) => n.status !== 'done');
   if (hasWork) {
-    process.stdout.write(`${summarize(tree, { label: project })} · update threads if work changed\n`);
+    const line = `${summarize(tree, { label: project })} · update threads if work changed`;
+
+    // Emit only when the summary actually changed. An identical line is already
+    // sitting in the transcript from an earlier turn, and every re-injection is
+    // re-read (and re-billed) on every subsequent turn. Measured over ~5k
+    // injections the text was overwhelmingly repeat sends of unchanged state.
+    // PreCompact deletes the stamp so the first turn after a compaction
+    // re-emits, since by then the earlier copy is gone from context.
+    const stamp = join(homedir(), '.claude', '.threads-emitted', `${sid}`);
+    let last = null;
+    try {
+      last = readFileSync(stamp, 'utf8');
+    } catch {
+      // no stamp yet: first turn of this session, fall through and emit
+    }
+
+    if (line !== last) {
+      try {
+        mkdirSync(join(homedir(), '.claude', '.threads-emitted'), { recursive: true });
+        writeFileSync(stamp, line);
+      } catch {
+        // stamp is an optimisation, never a gate: emit even if it cannot persist
+      }
+      process.stdout.write(`${line}\n`);
+    }
   }
 } catch {
   // never block a prompt
