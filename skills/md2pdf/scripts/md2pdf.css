@@ -2,6 +2,9 @@
  * Edit freely — md2pdf.sh picks this up automatically (no code change needed).
  * If this file is deleted, the script falls back to a built-in copy of these rules. */
 @page { size: A4; margin: 1.6cm; }
+/* Pandoc renders the --metadata title as a title block; documents supply their
+ * own H1, so suppress the auto-generated one. */
+#title-block-header { display: none; }
 body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; font-size: 11pt; line-height: 1.42; color: #111; margin: 0; }
 h1 { font-size: 15pt; margin: 0 0 4px; }
 h2 { font-size: 12.5pt; margin: 14px 0 4px; }
@@ -11,6 +14,10 @@ ul, ol { margin: 4px 0; padding-left: 22px; }
 code { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 9.5pt; background: #f4f4f4; padding: 0 3px; border-radius: 3px; }
 pre { background: #f4f4f4; padding: 8px 10px; border-radius: 4px; font-size: 9pt; overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; font-size: 9.7pt; margin: 6px 0; }
-th, td { border: 1px solid #888; padding: 4px 6px; text-align: left; vertical-align: top; }
+/* Pandoc bakes column widths from the markdown delimiter-row dash counts into
+ * <col style="width:NN%">, which often starves the content-heavy columns.
+ * Neutralise them and let the browser's auto table layout size by content. */
+col[style] { width: auto !important; }
+th, td { border: 1px solid #888; padding: 4px 6px; text-align: left; vertical-align: top; overflow-wrap: break-word; }
 th { background: #f0f0f0; }
 blockquote { margin: 6px 0; padding: 2px 12px; border-left: 3px solid #ccc; color: #333; }

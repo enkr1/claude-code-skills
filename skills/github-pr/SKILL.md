@@ -188,20 +188,35 @@ Body: summary · what's-new grouped by theme (with `#issue` refs) · stats table
 ## Step 2a — Collect closing issues (MANDATORY — this is where dev-line issues actually close)
 GitHub only auto-closes an issue when a `Closes #N` keyword lands on the **default branch** (`release_branch`). Feature→integration PRs carry `Closes #N` but it is **armed-not-fired** — integration isn't the default branch. **The release PR is the ONLY place those issues close.** So the release PR body MUST list `Closes #N` for every open issue shipped in the range — do not rely on the per-commit `Closes` or the `#issue` refs in the what's-new section (refs alone don't close).
 
-Build the list mechanically, never by eyeballing subjects (a `(#N)` in a subject is often a **PR** number, not an issue):
+Build the list mechanically, never by eyeballing subjects (a `(#N)` in a subject is often a **PR** number, not an issue). Harvest from **two** sources and union them — the branch name is the reliable one, commit prose is the backfill:
+
 ```bash
-# 1. Gather every #N referenced in the range (subjects + Closes/Fixes/Refs in bodies).
-NUMS=$(git log <release>..<integration> --format="%s%n%b" | grep -oiE '#[0-9]+' | tr -d '#' | sort -un)
-# 2. Keep only OPEN ISSUES — drop PRs (gh issue view fails) and already-closed issues.
-for n in $NUMS; do
+# SOURCE 1 (primary, structured): issue number from every merged-PR branch in the range.
+# Branch convention is {action}/{issue-number}-{context}, so the number is in the ref
+# even when a commit forgot to cite it. This is what makes a missed `Refs #N` HARMLESS
+# instead of silently invisible.
+PR_NUMS=$(gh pr list --repo <owner/repo> --base <integration> --state merged \
+  --json headRefName --jq '.[].headRefName' \
+  | grep -oiE '^[a-z]+/([0-9]+)' | grep -oE '[0-9]+')
+# (scope to the release window with --search "merged:>=<date-of-last-release>" if the list is long)
+
+# SOURCE 2 (backfill): #N cited anywhere in the commit range — catches direct-to-dev
+# commits (CSS/copy) that never went through a branch/PR but still reference an issue.
+LOG_NUMS=$(git log <release>..<integration> --format="%s%n%b" | grep -oiE '#[0-9]+' | tr -d '#')
+
+# UNION, dedupe, keep only OPEN ISSUES (drops PRs — gh issue view fails — and closed issues).
+for n in $(printf '%s\n%s\n' "$PR_NUMS" "$LOG_NUMS" | sort -un); do
   st=$(gh issue view "$n" --json state --jq .state 2>/dev/null) && [ "$st" = "OPEN" ] && echo "Closes #$n"
 done
 ```
+
+**Non-feature veto (human confirm — do NOT auto-close blindly).** An OPEN issue in the range whose deliverable never reaches prod is NOT closed by shipping code — a research verdict, a test-checklist doc, an investigation task. Signal: its commits in the range touch only `docs/`/`*.md`, no runtime code. For each such issue, keep it as `Refs #N`, not `Closes #N`, and say why in the PR body. When unsure whether an issue is prod-shipping, surface it and ask rather than auto-closing (a wrong close is prod-visible and needs manual reopen). Ref: #988/#1008 stayed open through a release on purpose (2026-07-16).
+
 Append the resulting `Closes #N` lines to the **end** of the PR body (one per line, blank line before the block). After create, **verify** GitHub registered them:
 ```bash
 gh pr view <N> --json closingIssuesReferences --jq '.closingIssuesReferences[].number'
 ```
-The printed set MUST equal your open-issue list. Empty when you expected closes = the keywords didn't parse (wrong base branch, or `Ref`/bare `#N` instead of `Closes`) — fix the body.
+The printed set MUST equal your intended-close list (open shipping issues minus the non-feature veto). Empty when you expected closes = the keywords didn't parse (wrong base branch, or `Ref`/bare `#N` instead of `Closes`) — fix the body.
 
 ## Step 2b — Embed the Release Regression Gate / RRG (if `release.regression_gate` configured)
 When `release.regression_gate` is set, append this exit-criteria block to the PR body verbatim (link the configured `doc` / `human_doc`; head it with `release.regression_gate.name` if set, e.g. "RRG"). This is the release's exit criteria: the goal is to confirm **no existing feature regressed as new features ship**.

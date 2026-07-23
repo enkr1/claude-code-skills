@@ -141,8 +141,8 @@ query {
 | `enhancement` | Improvement to existing feature |
 | `ui/ux` | UI bug or improvement |
 | `refactor` | Code restructuring |
-| `backend-change-required` | Needs backend changes |
-| `research-required` | Needs investigation |
+| `needs-backend` | Needs backend changes |
+| `needs-research` | Needs investigation |
 | `unclear` | Requirements unclear |
 | `monitoring` | Needs monitoring |
 | `user-feedback` | From user report |

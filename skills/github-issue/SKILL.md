@@ -33,6 +33,31 @@ Priority and Effort live on GitHub's **native, issue-type-scoped fields** (the b
 - **Priority — `Urgent` is production-block ONLY.** Reserve the top tier for "your production site is blocked/broken/losing-data/exposed for real users." A red *dev* deploy is not Urgent. Uncertain → not Urgent. Native tiers: **Urgent** (=`p0`) · **High** (=`p1`) · **Medium** (=`p2`) · **Low**. The bug template's **Environment (Prod/Dev)** field is the fact this call needs.
 - **Effort is LLM-estimated at triage** (`--effort high|medium|low`), never asked of the reporter. Native fields are **type-scoped** — an issue with no Type shows no Priority/Effort fields, so always set the Type (`issue start` does).
 
+### Label Schema (facets) — SSOT
+
+Labels are namespaced facets: `<facet>-<value>`, flat, lowercase, hyphen-separated.
+The facet is everything before the FIRST hyphen. Dimensions needing enforced
+single-select (Type / Priority / Status / Effort) live on native fields + the board,
+NEVER as labels.
+
+| Facet | Question it answers | Values today |
+|-------|---------------------|--------------|
+| `cc-` | which Claude Code lane touched this? | `cc-local` (interactive session on this machine) / `cc-scheduled` (autonomous loop or cron pass) / `cc-recommend-close` (loop verdict: stale or duplicate, awaiting human close) / `cc-no-repro` (local repro attempt failed; loops skip re-picking) |
+| `src-` | where did this issue come from? | `src-user-feedback` / `src-llm-output` (LLM-output-rooted; fix prompt or model, not FE) / `src-teams` (auto-filed from a Teams thread) / `src-meeting` (filed by meeting-triage) |
+| `needs-` | what is this blocked on? | `needs-backend` / `needs-research` / `needs-triage` / `needs-design` (visual call routes through the design lead; scaffold + stop) |
+
+Rules:
+- A new value must answer its facet's question; a new facet = a new prefix + a row here.
+- A label only exists if a skill or workflow WRITES or READS it. No speculative values.
+- **Retire-on-touch:** legacy labels duplicating native fields (`bug`, `enhancement`,
+  `refactor`, `performance`, `ui/ux`, `to optimise`, `done`, `reviewed`, `parked`) are
+  not renamed; drop them from an issue as touched once the native field carries the signal.
+- **Never touch:** `claude` (triggers claude.yml), `dependencies` / `github-actions`
+  (Dependabot), GitHub defaults (`duplicate`, `wontfix`, `invalid`, `question`,
+  `good first issue`, `help wanted`).
+- Scope: frontend-owned repos (web-app, mobile, desktop). Other repos: propose to
+  owners, never rename unilaterally.
+
 ---
 
 ## Phase 1: Understand (Staff Engineer Mode)

@@ -24,7 +24,7 @@
       }
     },
     "native_priority": {
-      "_comment": "GitHub native issue Priority field — now the SSOT (board P0/P1/P2 is deprecated, kept only for legacy reads). Keyed by native option name; p0/p1/p2 remain as back-compat aliases. Urgent = production block ONLY.",
+      "_comment": "GitHub native issue Priority field \u2014 now the SSOT (board P0/P1/P2 is deprecated, kept only for legacy reads). Keyed by native option name; p0/p1/p2 remain as back-compat aliases. Urgent = production block ONLY.",
       "field_id": "<discover: see references/field-ids.md>",
       "options": {
         "urgent": "<discover: see references/field-ids.md>",
@@ -65,5 +65,6 @@
     "bug": "IT_kwDODIMxOc4BluTY",
     "feature": "IT_kwDODIMxOc4BluTZ"
   },
-  "_setup": "Copy this file to config.json (gitignored) and fill in your own IDs. See references/field-ids.md for the discovery commands. No credentials needed: auth is your own `gh auth login`."
+  "_setup": "Copy this file to config.json (gitignored) and fill in your own IDs. See references/field-ids.md for the discovery commands. No credentials needed: auth is your own `gh auth login`.",
+  "bot_marker": "<!-- your-org-automated -->  # optional: string your issue-template-gate workflow greps for; omit to stamp nothing"
 }
