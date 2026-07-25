@@ -21,10 +21,54 @@ issue create --title "..." --body "..." --type bug|task|feature [--priority p0|p
 
 # Non-interactive start (RECOMMENDED for Claude Code — avoids stdin pipe issues)
 issue start $ISSUE --type bug --priority p1 --effort medium --label ui/ux
+
+# Any command can target another repo
+issue status 76 --repo enkr1/form-check-app
 ```
 
 > **IMPORTANT for Claude Code:** Always use `--type`, `--priority`, `--effort`, `--label` flags with `start`.
 > NEVER pipe stdin (`echo "bug\np1" | issue start`). Pipe misalignment causes fields to be set incorrectly.
+
+### Which repo am I filing into?
+
+Resolved in this order, per command:
+
+1. `--repo owner/name`
+2. the cwd's git remote (`gh repo view`)
+3. `config.json`
+
+Config is picked to match: an adjacent **`config.<owner>.<repo>.json`** wins, else `config.json` when its own `owner`/`repo` match the target, else a degraded stub. Both config files are gitignored; symlink them out of a private directory the way `config.json` already is.
+
+**Never assume the repo.** Running in the wrong directory files the issue in the wrong project. When it matters, pass `--repo` explicitly rather than trusting the cwd.
+
+### Degraded mode (no board, no issue types)
+
+Projects v2 boards and native issue Types are org-scoped. A personal or solo repo usually has neither, and the script adapts instead of failing:
+
+| | Full config | Degraded |
+|---|---|---|
+| `create` | issue + type + board Status/dates + native fields | issue + labels + assignee |
+| `start` | all of the above | assignee + labels, exit 0 |
+| `end` | End Date, then the close command | the close command |
+| Priority | native field + board field | a label, via `priority_labels` |
+
+Degraded is a real completion, not a failure: `start` and `end` still exit 0 so the surrounding workflow is unchanged.
+
+Two config keys carry the difference:
+
+```jsonc
+{
+  "owner": "enkr1",
+  "repo": "form-check-app",
+  // Board-less stand-in for the Priority field.
+  "priority_labels": { "p0": "priority:high", "p1": "priority:medium", "p2": "priority:low" },
+  // Labels stamped on every scripted issue. MUST be [] where the repo has no
+  // cc-local label: gh rejects the whole `issue create` on one unknown label.
+  "auto_labels": []
+}
+```
+
+`auto_labels` defaults to `["cc-local"]` when the key is absent, so existing configs keep their behaviour.
 
 ### Priority + Effort → GitHub NATIVE issue fields (SSOT)
 

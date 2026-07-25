@@ -14,18 +14,101 @@ from pathlib import Path
 from typing import Optional
 
 
-# Load config from adjacent config.json
-CONFIG_PATH = Path(__file__).parent.parent / "config.json"
-with open(CONFIG_PATH) as f:
-    CONFIG = json.load(f)
+# ---------------------------------------------------------------------------
+# Config resolution — one skill, many repos.
+#
+# The target repo comes from `--repo`, else the cwd's git remote, else the
+# legacy config.json. Each repo gets its own config file. A repo with no
+# Projects v2 board and no native issue types runs DEGRADED (labels + assignee
+# only) rather than crashing on a missing key: priority rides `priority_labels`
+# there, and Status/dates are simply skipped.
+# ---------------------------------------------------------------------------
 
-OWNER = CONFIG["owner"]
-REPO = CONFIG["repo"]
-PROJECT_NUMBER = CONFIG["project_number"]
-PROJECT_ID = CONFIG["project_id"]
-FIELDS = CONFIG["fields"]
-TYPES = CONFIG["types"]
-BOT_MARKER = CONFIG.get("bot_marker", "")
+SKILL_DIR = Path(__file__).parent.parent
+
+OWNER = ""
+REPO = ""
+PROJECT_NUMBER: Optional[int] = None
+PROJECT_ID: Optional[str] = None
+FIELDS: dict = {}
+TYPES: dict = {}
+PRIORITY_LABELS: dict = {}
+AUTO_LABELS: list = []
+BOT_MARKER = ""
+HAS_BOARD = False
+CONFIG_SOURCE = ""
+
+
+def detect_repo() -> Optional[str]:
+    """`owner/name` of the repo owning the cwd, or None when gh can't see one."""
+    try:
+        result = subprocess.run(
+            ["gh", "repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner"],
+            capture_output=True, text=True,
+        )
+        return result.stdout.strip() or None
+    except Exception:
+        return None
+
+
+def find_config(slug: Optional[str]) -> tuple[dict, str]:
+    """Config for `owner/name` plus where it came from.
+
+    Order: an adjacent `config.<owner>.<repo>.json`, then `config.json` when its
+    own owner/repo match, then a degraded stub carrying just the slug.
+
+    :param slug: Target repo as `owner/name`, or None to fall back to config.json.
+    :returns: (config dict, human-readable source label).
+    :raises SystemExit: No config.json exists and no repo could be resolved.
+    """
+    if slug:
+        per_repo = SKILL_DIR / f"config.{slug.replace('/', '.')}.json"
+        if per_repo.exists():
+            with open(per_repo) as f:
+                return json.load(f), per_repo.name
+
+    default = SKILL_DIR / "config.json"
+    if default.exists():
+        with open(default) as f:
+            cfg = json.load(f)
+        if not slug or f"{cfg.get('owner')}/{cfg.get('repo')}" == slug:
+            return cfg, default.name
+
+    if slug:
+        # No config file means no declared label vocabulary either, so stamp
+        # nothing: gh rejects the whole `issue create` on one unknown label.
+        owner, _, repo = slug.partition("/")
+        return {"owner": owner, "repo": repo, "auto_labels": []}, "no config file (degraded)"
+
+    raise SystemExit(
+        "No config.json and no repo detected. Run inside a repo or pass --repo owner/name."
+    )
+
+
+def load_config(slug: Optional[str]) -> None:
+    """Resolve the target repo and populate the module-level config globals."""
+    global OWNER, REPO, PROJECT_NUMBER, PROJECT_ID, FIELDS, TYPES
+    global PRIORITY_LABELS, AUTO_LABELS, BOT_MARKER, HAS_BOARD, CONFIG_SOURCE
+
+    cfg, CONFIG_SOURCE = find_config(slug or detect_repo())
+    OWNER = cfg["owner"]
+    REPO = cfg["repo"]
+    PROJECT_NUMBER = cfg.get("project_number")
+    PROJECT_ID = cfg.get("project_id")
+    FIELDS = cfg.get("fields", {})
+    TYPES = cfg.get("types", {})
+    PRIORITY_LABELS = cfg.get("priority_labels", {})
+    # Labels stamped on every scripted issue. Defaults to cc-local for back-compat;
+    # a repo that has no such label MUST set "auto_labels": [], because gh rejects
+    # the whole `issue create` when one label does not exist in the repo.
+    AUTO_LABELS = cfg.get("auto_labels", ["cc-local"])
+    BOT_MARKER = cfg.get("bot_marker", "")
+    HAS_BOARD = bool(PROJECT_ID and FIELDS.get("status"))
+
+
+def priority_label(priority: Optional[str]) -> Optional[str]:
+    """Board-less stand-in for the Priority field: `p1` -> whatever the repo calls it."""
+    return PRIORITY_LABELS.get(priority) if priority else None
 
 
 def run_gh(args: list[str], capture: bool = True) -> str:
@@ -111,7 +194,21 @@ def get_issue_fields(number: int) -> dict:
     except RuntimeError:
         type_result = ""
 
-    # Project fields — query issue directly instead of scanning project items
+    # Project fields — query issue directly instead of scanning project items.
+    # Board-less repos skip this entirely; Status/dates simply do not exist there.
+    if not HAS_BOARD:
+        return {
+            "title": title,
+            "state": state,
+            "assignees": assignees,
+            "labels": labels,
+            "type": type_result,
+            "status": "",
+            "priority": "",
+            "start_date": "",
+            "end_date": "",
+        }
+
     project_query = f"""
     query {{
       repository(owner: "{OWNER}", name: "{REPO}") {{
@@ -175,7 +272,10 @@ def get_issue_fields(number: int) -> dict:
 
 
 def set_issue_type(node_id: str, issue_type: str) -> None:
-    """Set issue type via GraphQL mutation."""
+    """Set issue type via GraphQL mutation. No-op where the repo has no issue types."""
+    if not TYPES:
+        print("  (native issue types not available on this repo, skipped)")
+        return
     type_id = TYPES.get(issue_type)
     if not type_id:
         raise ValueError(f"Invalid type: {issue_type}. Valid: {', '.join(TYPES.keys())}")
@@ -340,17 +440,22 @@ def cmd_status(args: argparse.Namespace) -> int:
     fields = get_issue_fields(number)
 
     print(f"\nIssue #{number}: {fields['title'][:50]}...")
+    print(f"Repo: {OWNER}/{REPO}  |  config: {CONFIG_SOURCE}")
     print("\u2501" * 50)
 
     display_field("Assignee", ", ".join(fields["assignees"]))
     display_field("Labels", ", ".join(fields["labels"]))
-    display_field("Type", fields["type"])
-    display_field("Priority", fields["priority"])
-    display_field("Status", fields["status"])
-    display_field("Start Date", fields["start_date"])
-    display_field("End Date", fields["end_date"], required=False)
+    if TYPES:
+        display_field("Type", fields["type"])
+    if HAS_BOARD:
+        display_field("Priority", fields["priority"])
+        display_field("Status", fields["status"])
+        display_field("Start Date", fields["start_date"])
+        display_field("End Date", fields["end_date"], required=False)
 
     print("\u2501" * 50)
+    if not HAS_BOARD:
+        print("No project board for this repo: Type/Status/dates not tracked.")
     return 0
 
 
@@ -366,25 +471,32 @@ def cmd_start(args: argparse.Namespace) -> int:
     fields = get_issue_fields(number)
 
     print(f"\nIssue: {fields['title'][:60]}...")
+    print(f"Repo: {OWNER}/{REPO}  |  config: {CONFIG_SOURCE}")
     print("\u2501" * 50)
     print("CURRENT STATE:")
 
     all_set = True
     all_set &= display_field("Assignee", ", ".join(fields["assignees"]))
     all_set &= display_field("Labels", ", ".join(fields["labels"]))
-    all_set &= display_field("Type", fields["type"])
-    all_set &= display_field("Priority", fields["priority"])
-    all_set &= display_field("Status", fields["status"])
-    all_set &= display_field("Start Date", fields["start_date"])
+    if TYPES:
+        all_set &= display_field("Type", fields["type"])
+    if HAS_BOARD:
+        all_set &= display_field("Priority", fields["priority"])
+        all_set &= display_field("Status", fields["status"])
+        all_set &= display_field("Start Date", fields["start_date"])
 
     print("\u2501" * 50)
+    if not HAS_BOARD:
+        print("Degraded: no project board, so Status/dates are skipped.")
 
     want_effort = bool(getattr(args, "effort", None))
     # cc-local must be present to count as "fully set" \u2014 otherwise an
     # already-labelled issue (Labels shows as set) early-exits before the
     # cc-local guarantee below ever runs. This is the #892 gap: same class as
     # #926, just on the all-fields-set fast path instead of the label gate.
-    cc_local_ok = getattr(args, "no_cc_local", False) or "cc-local" in fields["labels"]
+    cc_local_ok = getattr(args, "no_cc_local", False) or all(
+        l in fields["labels"] for l in AUTO_LABELS
+    )
     if all_set and not want_effort and cc_local_ok:
         print("\n\u2705 All START fields already set!")
         return 0
@@ -398,7 +510,7 @@ def cmd_start(args: argparse.Namespace) -> int:
     updates = {}
 
     # Type
-    if not fields["type"]:
+    if TYPES and not fields["type"]:
         if hasattr(args, 'type') and args.type:
             updates["type"] = args.type
             print(f"  Type: {args.type} (from --type flag)")
@@ -407,7 +519,7 @@ def cmd_start(args: argparse.Namespace) -> int:
             updates["type"] = issue_type
 
     # Priority
-    if not fields["priority"]:
+    if HAS_BOARD and not fields["priority"]:
         if hasattr(args, 'priority') and args.priority:
             updates["priority"] = args.priority
             print(f"  Priority: {args.priority} (from --priority flag)")
@@ -426,24 +538,30 @@ def cmd_start(args: argparse.Namespace) -> int:
     # and --label on an already-labelled issue (e.g. an existing feature picked
     # up via start), which is exactly how #926 shipped without cc-local.
     desired = list(args.label) if getattr(args, "label", None) else []
+    # Board-less repos have nowhere to put Priority, so it rides a label instead.
+    if not HAS_BOARD:
+        pl = priority_label(getattr(args, "priority", None))
+        if pl and pl not in desired:
+            desired.append(pl)
+            print(f"  Priority label: {pl} (no board on this repo)")
     if not desired and not fields["labels"]:
         labels_input = input("Labels to add? (comma-separated, or skip): ").strip()
         if labels_input and labels_input.lower() != "skip":
             desired = [l.strip() for l in labels_input.split(",")]
-    if not getattr(args, "no_cc_local", False) and "cc-local" not in desired:
-        desired.append("cc-local")
+    if not getattr(args, "no_cc_local", False):
+        desired.extend(l for l in AUTO_LABELS if l not in desired)
     to_add = [l for l in desired if l not in set(fields["labels"])]
     if to_add:
         updates["labels"] = to_add
         print(f"  Labels to add: {', '.join(to_add)}")
 
     # Start always means In Progress — override any default/backlog state
-    if fields["status"] != "In Progress":
+    if HAS_BOARD and fields["status"] != "In Progress":
         updates["status"] = "in-progress"
         print("  Status will be set to: In Progress")
 
     # Start date defaults to today
-    if not fields["start_date"]:
+    if HAS_BOARD and not fields["start_date"]:
         updates["start_date"] = date.today().isoformat()
         print(f"  Start Date will be set to: {updates['start_date']}")
 
@@ -452,7 +570,7 @@ def cmd_start(args: argparse.Namespace) -> int:
         updates["assignee"] = "@me"
         print("  Assignee will be set to: @me")
 
-    print("\n\u2501" * 50)
+    print("\n" + "\u2501" * 50)
     print("Applying updates...")
 
     # Apply updates
@@ -476,6 +594,13 @@ def cmd_start(args: argparse.Namespace) -> int:
         if "assignee" in updates:
             print(f"  Setting assignee to {updates['assignee']}...")
             run_gh(["issue", "edit", str(number), "--add-assignee", updates["assignee"], "--repo", f"{OWNER}/{REPO}"])
+
+        # Everything below lives on the project board. Board-less repos stop here:
+        # assignee + labels (+ type where the repo has issue types) are the whole
+        # checkpoint, which is the degraded contract.
+        if not HAS_BOARD:
+            print("\n✅ START checkpoint complete (labels + assignee; no board on this repo).")
+            return 0
 
         # Project fields need item_id
         item_id = get_project_item_id(number)
@@ -561,13 +686,24 @@ def cmd_end(args: argparse.Namespace) -> int:
     fields = get_issue_fields(number)
 
     print(f"\nIssue: {fields['title'][:60]}...")
+    print(f"Repo: {OWNER}/{REPO}  |  config: {CONFIG_SOURCE}")
     print("\u2501" * 50)
     print("CURRENT STATE:")
 
     all_set = True
     all_set &= display_field("Assignee", ", ".join(fields["assignees"]))
     all_set &= display_field("Labels", ", ".join(fields["labels"]))
-    all_set &= display_field("Type", fields["type"])
+    if TYPES:
+        all_set &= display_field("Type", fields["type"])
+
+    # No board means no End Date to write; the close command IS the checkpoint.
+    if not HAS_BOARD:
+        print("\u2501" * 50)
+        print("\n\u2705 END checkpoint complete (no board on this repo, no dates to set).")
+        print("\nTo close the issue, run:")
+        print(f"  gh issue close {number} --repo {OWNER}/{REPO} --comment \"Fixed in <COMMIT_SHA>. <SUMMARY>\"")
+        return 0
+
     all_set &= display_field("Priority", fields["priority"])
     all_set &= display_field("Status", fields["status"])
     all_set &= display_field("Start Date", fields["start_date"])
@@ -628,11 +764,11 @@ def cmd_create(args: argparse.Namespace) -> int:
     if not args.type:
         print("Error: --type is required")
         return 1
-    if args.type not in TYPES:
+    if TYPES and args.type not in TYPES:
         print(f"Error: Invalid type '{args.type}'. Valid: {', '.join(TYPES.keys())}")
         return 1
 
-    print("Creating issue...")
+    print(f"Creating issue in {OWNER}/{REPO} (config: {CONFIG_SOURCE})...")
 
     # Stamp automation issues with an invisible trust marker (renders to nothing in
     # markdown). If the repo runs an "issue template gate" workflow, point that gate
@@ -654,8 +790,13 @@ def cmd_create(args: argparse.Namespace) -> int:
     labels = list(args.label or [])
     # Optionally auto-add default labels from config (e.g. a triage tag). Config-free repos add none.
     # Convention from a70958a; the create path never enforced it, so default it here.
-    if not args.no_cc_local and "cc-local" not in labels:
-        labels.append("cc-local")
+    if not args.no_cc_local:
+        labels.extend(l for l in AUTO_LABELS if l not in labels)
+    # Board-less repos carry priority on a label, since there is no field to set.
+    if not HAS_BOARD:
+        pl = priority_label(args.priority)
+        if pl and pl not in labels:
+            labels.append(pl)
     for label in labels:
         create_args.extend(["--label", label])
 
@@ -668,7 +809,13 @@ def cmd_create(args: argparse.Namespace) -> int:
     node_id = get_issue_node_id(number)
     set_issue_type(node_id, args.type)
 
-    # Step 3: Add to project
+    # Step 3: Add to project. Board-less repos are done once the issue exists.
+    if not HAS_BOARD:
+        print(f"\n✅ Done! Issue #{number} created ({', '.join(labels) or 'no labels'}).")
+        print("No project board for this repo, so Status/dates were skipped.")
+        print(f"URL: {issue_url}")
+        return 0
+
     print("Adding to project...")
     add_to_project(issue_url)
 
@@ -728,10 +875,19 @@ Examples:
   issue.py end 42         # Finish issue #42
   issue.py status 42      # Check fields on issue #42
   issue.py create --title "Fix bug" --body "Description" --type bug
+
+Repo resolution:
+  --repo owner/name, else the cwd's git remote, else config.json.
+  Config is an adjacent config.<owner>.<repo>.json, falling back to config.json.
+  A repo with no board and no issue types runs degraded: labels + assignee only.
 """
     )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    def add_repo_flag(p: argparse.ArgumentParser) -> None:
+        p.add_argument("--repo", metavar="OWNER/NAME",
+                       help="Target repo (default: the cwd's git remote, then config.json)")
 
     # start command
     start_parser = subparsers.add_parser("start", help="Interactive START workflow")
@@ -761,7 +917,11 @@ Examples:
     create_parser.add_argument("--backlog", action="store_true", help="File to do later: Backlog, no start date (default: In Progress + today's start date)")
     create_parser.add_argument("--no-cc-local", action="store_true", help="Do not auto-add the cc-local label (default: added, since a CC session opens it)")
 
+    for sub in (start_parser, end_parser, status_parser, create_parser):
+        add_repo_flag(sub)
+
     args = parser.parse_args()
+    load_config(getattr(args, "repo", None))
 
     commands = {
         "start": cmd_start,

@@ -2,5 +2,7 @@ node_modules/
 *.log
 .DS_Store
 skills/*/config.json
+skills/*/config.*.json
+!skills/*/config.example.json
 __pycache__/
 .worktrees/

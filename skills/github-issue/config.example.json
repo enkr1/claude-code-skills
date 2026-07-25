@@ -65,6 +65,16 @@
     "bug": "IT_kwDODIMxOc4BluTY",
     "feature": "IT_kwDODIMxOc4BluTZ"
   },
-  "_setup": "Copy this file to config.json (gitignored) and fill in your own IDs. See references/field-ids.md for the discovery commands. No credentials needed: auth is your own `gh auth login`.",
+  "priority_labels": {
+    "_comment": "Board-less repos only: p0/p1/p2 map to labels, since there is no Priority field to set. Omit when the repo has a board.",
+    "p0": "priority:high",
+    "p1": "priority:medium",
+    "p2": "priority:low"
+  },
+  "auto_labels": [
+    "cc-local"
+  ],
+  "_setup": "Copy this file to config.json (gitignored) and fill in your own IDs. Per-repo overrides live in config.<owner>.<repo>.json, same directory, also gitignored. See references/field-ids.md for the discovery commands. No credentials needed: auth is your own `gh auth login`.",
+  "_boardless": "A repo with no Projects v2 board and no native issue types needs only owner, repo, priority_labels and auto_labels; drop project_number, project_id, fields and types entirely. auto_labels MUST be [] unless the repo really has those labels, because gh rejects the whole `issue create` on one unknown label.",
   "bot_marker": "<!-- your-org-automated -->  # optional: string your issue-template-gate workflow greps for; omit to stamp nothing"
 }
