@@ -1,7 +1,7 @@
 ---
 name: enqueue
 description: Queue unfinished work for a later session by writing a handoff doc into the priority queue. Use when work is unfinished and the session must end, before /clear on a live task, when context is nearly full, or when the user says "enqueue", "handoff", "写个交接", "pick this up later", or "I'll continue tomorrow". Paired with the dequeue skill, which pops and resumes queued items.
-argument-hint: "What will the next session be used for? Optionally p1/p2/p3 priority."
+argument-hint: "What will the next session be used for? Optionally p0-p3 priority."
 ---
 
 # Enqueue
@@ -25,7 +25,7 @@ mkdir -p ~/.claude/handoffs/done
 **The directory IS the priority queue.** No index file, nothing to desync:
 
 - A doc at the top level of `~/.claude/handoffs/` = a pending queue item.
-- `p<N>` prefix = priority: `p1` urgent, `p2` normal (default), `p3` backlog. Ask only if the user hinted at urgency; otherwise default `p2` silently.
+- `p<N>` prefix = priority, industry P0-P3 convention: `p0` drop-everything, `p1` urgent, `p2` normal (default), `p3` backlog. Ask only if the user hinted at urgency; otherwise default `p2` silently.
 - The timestamp is minute-resolution so two same-day enqueues still order. One lexical sort = the whole queue: lower p first, then oldest first within a priority. `ls ~/.claude/handoffs/p*.md | sort` shows the queue exactly as dequeue will see it.
 - **Re-enqueueing an unfinished item rewrites the content but keeps the original filename.** The timestamp records when the task first entered the queue, so a rewrite never resets its position.
 - Popping = `dequeue` moving the doc into `done/` once the work's Done-when condition is met. Enqueue never touches `done/`.

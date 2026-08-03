@@ -14,8 +14,8 @@ Pop the top handoff off the queue, resume the work, and ack (archive) the doc on
 
 `~/.claude/handoffs/` — the directory IS the queue. No index file.
 
-- Pending item: `p<N>-<yyyymmddhhmm>-<slug>.md` at the top level.
-- Order: one lexical sort. `p1` before `p2` before `p3`, then oldest timestamp first within a priority.
+- Pending item: `p<N>-<yyyymmddhhmm>-<slug>.md` at the top level, priority `p0` (drop-everything) through `p3` (backlog).
+- Order: one lexical sort. Lower p first, then oldest timestamp first within a priority.
 - `done/` = popped items. Never resume from there.
 
 ```bash
