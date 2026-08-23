@@ -121,13 +121,17 @@ Read your own document first, as if you had no memory of the session, and **fix 
 - Does **Preflight** check the artifact the next action operates on, and does every mismatch land on an action rather than "look into it"?
 - Is anything hedged in one section and asserted flatly in another?
 
-Then hand it over. Show the user the path plus **Next action** verbatim in chat — a path alone gives them no way to judge the handoff while they can still correct it — and report the queue state so they know where this item sits:
+Then hand it over in **one sentence plus the command, nothing else**:
 
-```bash
-ls ~/.claude/handoffs/p*.md | sort
+```
+Enqueued: re-run the failing parser test against the new timeout branch (p2-202608031845-parser-timeout-fix.md, #2 of 3)
+
+/dequeue
 ```
 
-End with the item's position ("queued at #2 of 3") and the reminder that `/dequeue` in any fresh session pops the top item. No clipboard, no paste: the queue is the resume mechanism.
+The sentence says what the next session picks up, not what this one did. Filename and position ride along in it; position comes from `ls ~/.claude/handoffs/p*.md | sort`. Then the bare command on its own line, copy-pasteable.
+
+No preamble, no summary of the handoff, no pasted sections, no explanation of how the queue works. The user sat through the session that produced this doc and the doc is one `cat` away, so anything past those two lines is reading it back to them. If the write surfaced something they must decide before the next session, that is one more sentence, not a paragraph.
 
 ## Quick reference
 
