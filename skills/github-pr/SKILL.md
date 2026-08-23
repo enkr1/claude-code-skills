@@ -183,7 +183,7 @@ gh pr create --base <release_branch> --head <integration_branch> \
   --title "<release.title_prefix><Theme 1>, <Theme 2> & <Theme 3>" \
   --assignee <assignee> [--draft if release.draft] --body "..."
 ```
-Body: summary · what's-new grouped by theme (with `#issue` refs) · stats table · collapsible full commit list grouped by type (`feat`/`fix`/`fix(security)`/`style`/`refactor`/`revert`/`docs`) with 7-char SHAs · **`Closes #N` lines for every shipped open issue (see Step 2a)** · **Release Regression Gate sign-off** (see Step 2b). **No AI-signature trailer.**
+Body: summary · what's-new grouped by theme (with `#issue` refs) · stats table · collapsible full commit list grouped by type (`feat`/`fix`/`fix(security)`/`style`/`refactor`/`revert`/`docs`) with 7-char SHAs · **`Closes #N` lines for every shipped open issue (see Step 2a)** · **Release Regression Gate sign-off** (see Step 2b) · **expiring-scaffolding list** (see Step 2c). **No AI-signature trailer.**
 
 ## Step 2a — Collect closing issues (MANDATORY — this is where dev-line issues actually close)
 GitHub only auto-closes an issue when a `Closes #N` keyword lands on the **default branch** (`release_branch`). Feature→integration PRs carry `Closes #N` but it is **armed-not-fired** — integration isn't the default branch. **The release PR is the ONLY place those issues close.** So the release PR body MUST list `Closes #N` for every open issue shipped in the range — do not rely on the per-commit `Closes` or the `#issue` refs in the what's-new section (refs alone don't close).
@@ -223,12 +223,42 @@ When `release.regression_gate` is set, append this exit-criteria block to the PR
 ```markdown
 ## ✅ RRG: Release Regression Gate (exit criteria — must all pass before merge)
 Full steps: `<release.regression_gate.doc>` (🤖 bot) + `<release.regression_gate.human_doc>` (🤚 human)
-- [ ] Pre-flight passed (tsc / build / CI green)
+- [ ] Pre-flight passed locally: `npx tsc --noEmit` + `npx eslint src` + `npm run build` (GitHub Actions is disabled org-wide for billing, so "CI green" is unsatisfiable and is NOT a gate; local verification is the gate)
 - [ ] 🤖 Chrome MCP bot track run on the dev deploy — all P0 flows pass
 - [ ] 🤚 Human track run (record audio, snap photo, upload, OAuth, payment, PWA) on iOS + Android + desktop
 - [ ] Interaction matrix re-tested for every surface this release touched (correlated-bug check)
 - [ ] Zero P0 regressions open
 ```
+
+## Step 2c: List expiring scaffolding (informational, never a blocker)
+The working model is: ship to integration so the team can look at it there, then clean up on the way to release. That keeps most demo scaffolding switch-free, which is the right default. Its weak point is that "then clean up" is a step someone has to remember, and a release carries a hundred-plus commits. This step replaces the memory with a grep.
+
+Scan for the markers the codebase already uses, then split by path: the two halves ask different questions:
+
+```bash
+# Everything carrying an expiry marker.
+HITS=$(grep -rniE "throwaway|delete once|remove once|TEMP HACK" src \
+  --include="*.ts" --include="*.tsx" -l 2>/dev/null | sort -u)
+# A: unlinked prototype routes. Safe to leave; delete when convenient.
+echo "$HITS" | grep -E "/dev/" 
+# B: shipping code. Each carries a condition; check whether it has now been met.
+echo "$HITS" | grep -vE "/dev/"
+```
+
+Append to the PR body. Collapse a whole prototype tree to one line (five files under one `/dev/*` route is one decision, not five), and quote each B-half line's stated condition so the reviewer can judge it without opening the file:
+
+```markdown
+## 🧹 Expiring scaffolding (informational: none of this blocks the merge)
+**Unlinked prototypes** (safe to ship; delete when convenient)
+- [ ] `src/app/[locale]/dev/<route>/`: <what it was for>
+
+**In shipping code** (each has a trigger; has it fired?)
+- [ ] `path/to/file.ts:<line>`: "<the condition quoted from the comment>"
+```
+
+Never auto-delete and never gate the release on it. A reviewer decides per line. The point is that the list is in front of them, not that anything is enforced.
+
+**When a gate beats this list.** Stand-in content a real user cannot distinguish from real output does not belong in this flow at all: it should be gated in code (hostname check, not `NODE_ENV`; the Vercel integration deploy is a production build). Reserve that for cases where a leak would mislead someone about a real person or real money. Everything milder rides this list.
 
 ## Step 3 — Verify completeness
 Cross-check every commit is represented:
