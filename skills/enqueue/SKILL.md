@@ -126,10 +126,12 @@ Then hand it over in **one sentence plus the command, nothing else**:
 ```
 Enqueued: re-run the failing parser test against the new timeout branch (p2-202608031845-parser-timeout-fix.md, #2 of 3)
 
-/dequeue
+/dequeue parser-timeout-fix
 ```
 
-The sentence says what the next session picks up, not what this one did. Filename and position ride along in it; position comes from `ls ~/.claude/handoffs/p*.md | sort`. Then the bare command on its own line, copy-pasteable.
+The sentence says what the next session picks up, not what this one did. Filename and position ride along in it; position comes from `ls ~/.claude/handoffs/p*.md | sort`. Then the command on its own line, carrying this item's own slug, copy-pasteable.
+
+**The slug is not optional, even at #1.** A bare `/dequeue` pops the queue head, so on every enqueue that lands anywhere else it resumes a different task than the sentence above it just named, and the two lines contradict each other in the one place the user is most likely to copy blind.
 
 No preamble, no summary of the handoff, no pasted sections, no explanation of how the queue works. The user sat through the session that produced this doc and the doc is one `cat` away, so anything past those two lines is reading it back to them. If the write surfaced something they must decide before the next session, that is one more sentence, not a paragraph.
 
@@ -140,7 +142,7 @@ No preamble, no summary of the handoff, no pasted sections, no explanation of ho
 | Work finished and shipped | No handoff. Commit messages carry it. |
 | Work unfinished, ending session | Enqueue, then `/clear` |
 | Context nearly full, task alive | Enqueue, then `/clear` — beats `/compact` by roughly 3x on cost, and the artifact outlives the session |
-| Same task, next day | Enqueue → `/clear` → `/dequeue` in the new session |
+| Same task, next day | Enqueue → `/clear` → `/dequeue <slug>` in the new session |
 | Resuming an item mid-queue | `/dequeue <slug>` — jumping the queue is allowed, silent starvation is not |
 | Reasoning worth keeping but task done | A memory or a plan doc, not a handoff |
 
