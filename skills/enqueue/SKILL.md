@@ -29,6 +29,7 @@ mkdir -p ~/.claude/handoffs/done
 - The timestamp is minute-resolution so two same-day enqueues still order. One lexical sort = the whole queue: lower p first, then oldest first within a priority. `ls ~/.claude/handoffs/p*.md | sort` shows the queue exactly as dequeue will see it.
 - **Re-enqueueing an unfinished item rewrites the content but keeps the original filename.** The timestamp records when the task first entered the queue, so a rewrite never resets its position.
 - Popping = `dequeue` moving the doc into `done/` once the work's Done-when condition is met. Enqueue never touches `done/`.
+- **Owner-QA is not a queue item (owner, 2026-09-02).** When the only thing left is the owner testing it himself on his device or prod, the code side is done: pop the doc. He tests on his own time and files a NEW item if something breaks. Never enqueue or keep a doc whose Done-when is "the owner has looked at it"; put the check recipe in the closing report instead.
 
 One directory for every project means an unfinished task is findable without remembering which repo it belonged to, and work that spans repos has one obvious home. Never `mktemp`: a temp path is gone tomorrow, outside git, and invisible to conversation search, which is every property a handoff exists to have.
 

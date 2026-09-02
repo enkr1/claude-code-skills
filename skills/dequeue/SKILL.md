@@ -27,7 +27,13 @@ First line = top of queue. No matches = queue empty: say so and stop.
 ## Selecting
 
 - **Bare invocation** → take the first line of the sorted listing. Announce the pick before starting: item name, priority, and how many remain behind it. The user can redirect before you sink work in.
-- **With a slug argument** → fuzzy-match against pending filenames. Jumping the queue is allowed; silently skipping the top item is not — name what you skipped ("taking `auth-refactor`, skipping p1 `parser-timeout-fix` ahead of it").
+- **With a slug argument** → go straight to that one doc. Do NOT list the queue first; resolve and read in a single call:
+
+```bash
+ls ~/.claude/handoffs/*<slug>*.md
+```
+
+  One match → read it and start. Zero matches → only then fall back to the full listing. Jumping the queue is allowed and needs no ceremony; report what you skipped at the END, from the closing listing you already owe the user, not by listing up front.
 - **"list" / "what's queued"** → show the sorted queue with one line each (priority, age, slug, the doc's Next action first line). No pop, no work.
 - Ambiguous slug (2+ matches) → show the matches, ask.
 
@@ -63,6 +69,7 @@ Partially done is the likeliest state a successor inherits. Say plainly in State
 | Found | Do |
 |---|---|
 | Queue empty | Say so, stop. Nothing to invent. |
+| Doc's remaining work is owner-QA only (his device, his account, his eyes) | Pop it now, no verification owed (owner, 2026-09-02). Report the check recipe in one line; he files a new item if it breaks. |
 | Preflight shows work already done (someone finished it outside the queue) | Verify Done-when independently, then ack with a note that it was found complete. Do not redo it. |
 | Doc without `p` prefix at top level | Legacy item: treat as p2. Rename it into format (`p2-<yyyymmddhhmm from its date>-<slug>.md`) so the sort stays honest. |
 | Two docs about the same task | Read both, keep the newer as truth, move the older to `done/` with a note in the survivor. |
