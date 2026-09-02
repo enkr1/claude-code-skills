@@ -78,6 +78,10 @@ pointer has to re-derive what "correct" means before it can start.
 and report. Say this explicitly for the partly-done case, since finding three
 of five items already handled is the likeliest way reality differs.
 
+## Decisions
+What the user decided out loud, in their own words, and what each one changes. Disk cannot verify these, so the source is the transcript and every line says so.
+- **Said, not on disk:** ship the banner now, do not wait on the copy review. Supersedes the "blocked on copy" gate under State.
+
 ## State (verified <date>)
 What is true right now, each line carrying how it was checked.
 - `feature/x` at a1b2c3d, 3 commits ahead of dev — `git log --oneline dev..HEAD`
@@ -112,6 +116,14 @@ Cut any section with nothing real in it. An empty "Dead ends" is honest; a padde
 
 ## Before you finish
 
+**Enumerate what the user said. Do not recall it.** Misses cluster past 200k context, exactly where recall is weakest, so read the session's own messages back off disk:
+
+```bash
+jq -r -f ~/.claude/skills/enqueue/asks.jq ~/.claude/projects/*/<session-id>.jsonl
+```
+
+The session id is the last path segment of the scratchpad directory named in your system prompt. One output line is one message, and a single message routinely carries several separate asks, so work at the level of the ask rather than the line. Every ask gets disposed of out loud: carried into the doc, done this session, or dropped with a reason. An ask you cannot classify is carried, never dropped.
+
 Read your own document first, as if you had no memory of the session, and **fix what the read turns up before showing it**. Finding a flaw and shipping it anyway is the one outcome this pass exists to prevent.
 
 - Could you start work from **Preflight** plus **Next action** alone, and would you know when it is done?
@@ -121,6 +133,7 @@ Read your own document first, as if you had no memory of the session, and **fix 
 - Is anything here already in a file you could have pointed at instead?
 - Does **Preflight** check the artifact the next action operates on, and does every mismatch land on an action rather than "look into it"?
 - Is anything hedged in one section and asserted flatly in another?
+- Does every ask from the sweep appear in the doc, or have a stated reason for not appearing?
 
 Then hand it over in **one sentence plus the command, nothing else**:
 

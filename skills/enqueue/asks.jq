@@ -1,0 +1,15 @@
+# Print one line per human message in a Claude Code session transcript.
+# Usage: jq -r -f asks.jq ~/.claude/projects/*/<session-id>.jsonl
+select(.type == "user" and (.isMeta | not) and (.isSidechain | not) and (.toolUseResult | not))
+| (.message.content | if type == "string" then . else ([.[] | select(.type == "text") | .text] | join(" ")) end)
+| gsub("(?s)<system-reminder>.*?</system-reminder>"; "")
+| gsub("(?s)<local-command-caveat>.*?</local-command-caveat>"; "")
+| gsub("(?s)<local-command-stdout>.*?</local-command-stdout>"; "")
+| gsub("(?s)<command-message>.*?</command-message>"; "")
+| gsub("(?s)<command-args>.*?</command-args>"; "")
+| gsub("<command-name>|</command-name>"; "")
+| gsub("\n"; " ⏎ ")
+| gsub("^(⏎|\\s)+|(⏎|\\s)+$"; "")
+| select(length > 0)
+| select(startswith("<teammate-message") | not)
+| select(test("^\\[Request interrupted by user") | not)

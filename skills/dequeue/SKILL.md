@@ -42,7 +42,7 @@ ls ~/.claude/handoffs/*<slug>*.md
 Read the doc top to bottom, then follow its own contract:
 
 1. **Run Preflight exactly as written.** Every check's mismatch consequence is in the doc; honour it. A failed check with a "stop and report" consequence means stop and report, not improvise.
-2. **Start at Next action.** The doc was written so these two sections alone are enough to begin. Read State / Why / Dead ends before deviating from the plan, not before starting it.
+2. **Read Decisions, then start at Next action.** A decision recorded there can have superseded a gate the rest of the doc still assumes, so it is the one section worth reading before you begin. State / Why / Dead ends can wait until you deviate from the plan.
 3. **Respect Authority.** The doc says what you may fix alone versus what needs the user. Preflight surprises outside your authority go back to the user with the mismatch, not a workaround.
 4. If reality diverges from State beyond what Preflight anticipated, treat the doc as stale intel, not instructions: report the divergence, propose the adjusted plan, get a nod before proceeding.
 
