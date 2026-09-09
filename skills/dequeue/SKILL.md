@@ -46,6 +46,14 @@ Read the doc top to bottom, then follow its own contract:
 3. **Respect Authority.** The doc says what you may fix alone versus what needs the user. Preflight surprises outside your authority go back to the user with the mismatch, not a workaround.
 4. If reality diverges from State beyond what Preflight anticipated, treat the doc as stale intel, not instructions: report the divergence, propose the adjusted plan, get a nod before proceeding.
 
+**The doc you just popped stays live for the rest of the session.** From the moment you resume, every fact you verify, decision the user makes, or approach you rule out goes straight back into it as you go:
+
+```bash
+~/.claude/scripts/hd.sh <slug> state 'rung now returns lastActive, verified against the detail payload'
+```
+
+This is the write-through half of `enqueue`. It is what makes ending the session cheap, because there is nothing left to reconstruct.
+
 ## The pop (ack)
 
 When the doc's **Done when** condition is observably met, and only then:
@@ -60,7 +68,9 @@ Then report: what was completed, evidence for Done-when (which env verified), an
 
 ## Ending unfinished
 
-Session ending with Done-when not yet met → invoke `enqueue` to rewrite the doc in place: fresh State, fresh Next action, same filename (same queue position). The doc you inherited is now stale by exactly the work you did; leaving it unrewritten poisons the next dequeue.
+Session ending with Done-when not yet met → run `enqueue`'s CLOSE step, same filename so the queue position holds.
+
+If you appended as you worked, CLOSE is small: rewrite **Next action** only, re-run Preflight, hand over. Everything else is already current. If you did not append, you are now paying the full rebuild at the worst context price of the session, which is the cost the write-through design exists to avoid. Do not repeat it next time.
 
 Partially done is the likeliest state a successor inherits. Say plainly in State what you finished, what you touched but did not finish, and what you never reached.
 

@@ -1,141 +1,72 @@
 ---
 name: enqueue
 description: Queue unfinished work for a later session by writing a handoff doc into the priority queue. Use when work is unfinished and the session must end, before /clear on a live task, when context is nearly full, or when the user says "enqueue", "handoff", "写个交接", "pick this up later", or "I'll continue tomorrow". Paired with the dequeue skill, which pops and resumes queued items.
-argument-hint: "What will the next session be used for? Optionally p0-p3 priority."
+argument-hint: "What the next session picks up. Optionally p0-p3 priority."
 ---
 
 # Enqueue
 
-Write the one document a fresh session needs to resume without re-deriving anything, and file it into the handoff queue. The paired `dequeue` skill pops it later.
+The handoff doc is written DURING the work, never reconstructed at the end.
 
-**Core principle: the handoff carries what disk cannot.** Files, commits and plans survive on their own. What dies with the session is the reasoning: what you verified, what you ruled out, why the current approach beat the alternative. Capture that, reference the rest.
+Reconstructing it at the end is a flush penalty paid at the most expensive point in the session, and it forces a second verification pass over facts that were already cheap to check when they landed. Measured 2026-09-09: the end-of-session rebuild cost 15-20k tokens and reliably overshot the very clear-threshold it was meant to respect.
 
-## Where it goes — the queue
+**The handoff carries what disk cannot.** Files, commits and plans survive on their own. What dies with the session is the reasoning: what you verified, what you ruled out, why the current approach beat the alternative. Capture that, reference the rest.
 
-Always here, whatever the project:
+## OPEN, once
+
+As soon as work looks like it will outlive the session. Not at the end.
 
 ```bash
 mkdir -p ~/.claude/handoffs/done
-# → ~/.claude/handoffs/p<N>-$(date +%Y%m%d%H%M)-<slug>.md
-#   e.g. p2-202608031845-parser-timeout-fix.md
+cp ~/.claude/skills/enqueue/references/template.md \
+   ~/.claude/handoffs/p2-$(date +%Y%m%d%H%M)-<slug>.md
 ```
 
 `<slug>` is 2-4 kebab-case words naming the task, not the session.
 
-**The directory IS the priority queue.** No index file, nothing to desync:
+**Only open a doc for work you will resume within 72 hours.** Anything further out is a Google Task, not an 8KB document with a verified-state section. A doc that is never dequeued cost its full write price and returned nothing.
 
-- A doc at the top level of `~/.claude/handoffs/` = a pending queue item.
-- `p<N>` prefix = priority, industry P0-P3 convention: `p0` drop-everything, `p1` urgent, `p2` normal (default), `p3` backlog. Ask only if the user hinted at urgency; otherwise default `p2` silently.
-- The timestamp is minute-resolution so two same-day enqueues still order. One lexical sort = the whole queue: lower p first, then oldest first within a priority. `ls ~/.claude/handoffs/p*.md | sort` shows the queue exactly as dequeue will see it.
-- **Re-enqueueing an unfinished item rewrites the content but keeps the original filename.** The timestamp records when the task first entered the queue, so a rewrite never resets its position.
-- Popping = `dequeue` moving the doc into `done/` once the work's Done-when condition is met. Enqueue never touches `done/`.
-- **Owner-QA is not a queue item (owner, 2026-09-02).** When the only thing left is the owner testing it himself on his device or prod, the code side is done: pop the doc. He tests on his own time and files a NEW item if something breaks. Never enqueue or keep a doc whose Done-when is "the owner has looked at it"; put the check recipe in the closing report instead.
+## APPEND, continuously
 
-One directory for every project means an unfinished task is findable without remembering which repo it belonged to, and work that spans repos has one obvious home. Never `mktemp`: a temp path is gone tomorrow, outside git, and invisible to conversation search, which is every property a handoff exists to have.
-
-## Verify before you write it down
-
-A handoff repeats its own errors into the next session, so every factual claim gets checked against disk first: `git log --oneline -5`, the file exists, the branch is what you think, the test actually passes.
-
-Label what you could not verify. `**Assumed:**` and `**Unverified:**` are load-bearing prefixes, and a successor acting on a guess dressed as a fact is the expensive failure. If a check surprises you, that surprise is one of the most valuable things in the document.
-
-**A label travels with its fact.** Once something is marked unverified in State, it cannot appear unhedged anywhere else — a number hedged in one section and asserted flatly two sections later reads as established to anyone who skims, and skimming is exactly what a successor does.
-
-**The citation has to prove the claim.** `git log --oneline` cannot establish a line count. A check that does not actually test what it sits next to launders a guess into a fact, which is worse than citing nothing: a bare claim invites doubt, a mis-cited one closes it off. Either run the check that proves it or write `**Per the commit message, not independently checked:**`.
-
-## The document
-
-Seven sections, in this order. Inverted pyramid: a successor who runs Preflight and reads Next action can start correctly without the rest.
-
-```markdown
-# Handoff: <task> (<date>)
-
-## Preflight
-Commands the successor runs first, in a shell block. Every check carries both
-its expected result and what a mismatch means, on the line below it. A check
-whose failure has no stated consequence is worse than no check: it halts the
-successor without telling it anything.
-
-Each consequence must land on an action — proceed, skip to step N, stop and
-report. "Investigate further" is a deferral, not a consequence, and it sends
-the successor hunting through the rest of the document for a verdict.
-
-    git log --oneline -1 -- src/parser.ts    # expect a1b2c3d
-    # different → someone committed since; read their diff before touching it
-    test -d ~/work/thing/.worktrees          # expect missing
-    # exists → the worktree survived; reuse it, do not create another
-
-Cover at minimum the artifact the next action operates on.
-
-## Next action
-The single thing to do first, concrete enough to start on without deciding
-anything. Then the 2-3 steps after it.
-**Done when:** the condition that ends the whole block, observable enough to
-tell finished from nearly-finished. Where a step is to review, verify or
-finish something, its criteria go here in full — a successor holding only a
-pointer has to re-derive what "correct" means before it can start.
-**Authority:** what the successor may fix on its own versus what it must stop
-and report. Say this explicitly for the partly-done case, since finding three
-of five items already handled is the likeliest way reality differs.
-
-## Decisions
-What the user decided out loud, in their own words, and what each one changes. Disk cannot verify these, so the source is the transcript and every line says so.
-- **Said, not on disk:** ship the banner now, do not wait on the copy review. Supersedes the "blocked on copy" gate under State.
-
-## State (verified <date>)
-What is true right now, each line carrying how it was checked.
-- `feature/x` at a1b2c3d, 3 commits ahead of dev — `git log --oneline dev..HEAD`
-- Migration applied locally, NOT on staging — checked local dev only
-- **Unverified:** whether the nightly job picked up the new config
-**If this does not match:** for anything Preflight does not already cover,
-where to look, who decides, and whether to carry on regardless. A successor
-that finds a different world needs a named next move, not a guess.
-
-## Why it looks like this
-Decisions a successor would otherwise reopen, each with its reason.
-- Chose polling over webhooks: the vendor's callback needs a public URL
-- Rejected caching the parsed result: invalidation needs a key we don't have
-
-## Dead ends
-What was tried and did not work, so it is not tried again.
-- Bumping the timeout: still fails at 30s, so it is not a timeout
-- `--legacy-peer-deps`: installs, then breaks at runtime on the same module
-
-## Open questions
-Genuinely undecided, with what would settle each one.
-- Does X need to handle the empty case? Ask the user, or check prod data.
-
-## Pointers
-Artifacts, by path or URL, never copied in.
-- Plan: `docs/superpowers/plans/2026-07-23-thing.md`
-- Issue: #412 · Branch: `feature/x` · Failing test: `src/x.test.ts:88`
-- Skills for the next session: `worktrees` to re-enter isolation, then `tdd`
-```
-
-Cut any section with nothing real in it. An empty "Dead ends" is honest; a padded one wastes the successor's first minutes.
-
-## Before you finish
-
-**Enumerate what the user said. Do not recall it.** Misses cluster past 200k context, exactly where recall is weakest, so read the session's own messages back off disk:
+The moment a fact is verified, a decision is made, or an approach is ruled out:
 
 ```bash
-jq -r -f ~/.claude/skills/enqueue/asks.jq ~/.claude/projects/*/<session-id>.jsonl
+~/.claude/scripts/hd.sh <slug> state 'migration applied locally, NOT on staging, checked local dev only'
+~/.claude/scripts/hd.sh <slug> decision 'Said, not on disk: ship the banner now, do not wait on copy review'
+~/.claude/scripts/hd.sh <slug> deadend 'bumping the timeout: still fails at 30s, so it is not a timeout'
 ```
 
-The session id is the last path segment of the scratchpad directory named in your system prompt. One output line is one message, and a single message routinely carries several separate asks, so work at the level of the ask rather than the line. Every ask gets disposed of out loud: carried into the doc, done this session, or dropped with a reason. An ask you cannot classify is carried, never dropped.
+Sections: `decision` `state` `deadend` `question` `pointer` `why` `next`. The script fails closed on an unknown or ambiguous slug, and never creates a doc.
 
-Read your own document first, as if you had no memory of the session, and **fix what the read turns up before showing it**. Finding a flaw and shipping it anyway is the one outcome this pass exists to prevent.
+**Append with the script, never with Edit.** Edit requires Reading the whole doc back first, which is the exact cost this design removes. An append is roughly 150 tokens against 7,000.
 
-- Could you start work from **Preflight** plus **Next action** alone, and would you know when it is done?
-- If you found the work half-finished, would you know whether to complete it or stop?
-- Does every claim in **State** say how it was checked, and could that check actually prove it?
+Write the fact when you verify it and the citation is free. Write it at the end and you are paying to re-derive what you already knew.
+
+## Verification labels
+
+`**Assumed:**` and `**Unverified:**` are load-bearing. A successor acting on a guess dressed as a fact is the expensive failure.
+
+**A label travels with its fact.** Once something is hedged in State it cannot appear flat anywhere else, because skimming is exactly what a successor does.
+
+**The citation has to prove the claim.** `git log --oneline` cannot establish a line count. Either run the check that proves it, or write `**Per the commit message, not independently checked:**`.
+
+## CLOSE, at end of session
+
+The doc is already current, so closing is not a rebuild.
+
+1. Set **Next action**, its **Done when**, and its **Authority**. This is the one section that must be rewritten, because it is the only one describing the future.
+2. Run the **Preflight** block once and fix any check that no longer holds.
+3. Read the doc as if you had no memory of the session, and fix what that read turns up before showing it. Finding a flaw and shipping it anyway is the one outcome this pass exists to prevent.
+
+Three questions, not eight:
+
+- Could you start from Preflight plus Next action alone, and would you know when it is done?
+- If you found the work half finished, would you know whether to continue or stop?
 - Is anything asserted that you did not actually verify?
-- Is anything here already in a file you could have pointed at instead?
-- Does **Preflight** check the artifact the next action operates on, and does every mismatch land on an action rather than "look into it"?
-- Is anything hedged in one section and asserted flatly in another?
-- Does every ask from the sweep appear in the doc, or have a stated reason for not appearing?
 
-Then hand it over in **one sentence plus the command, nothing else**:
+**Cap the doc at 8KB.** Past that it is a spec, not a handoff: move it into the repo and leave the handoff pointing at it. A doc that keeps growing across rounds means the task is bigger than one session, which is a scoping problem no handoff can fix.
+
+Then hand over in one sentence plus the command, nothing else:
 
 ```
 Enqueued: re-run the failing parser test against the new timeout branch (p2-202608031845-parser-timeout-fix.md, #2 of 3)
@@ -143,31 +74,20 @@ Enqueued: re-run the failing parser test against the new timeout branch (p2-2026
 /dequeue parser-timeout-fix
 ```
 
-The sentence says what the next session picks up, not what this one did. Filename and position ride along in it; position comes from `ls ~/.claude/handoffs/p*.md | sort`. Then the command on its own line, carrying this item's own slug, copy-pasteable.
+**The slug is not optional, even at #1.** A bare `/dequeue` pops the queue head, so anywhere else it resumes a different task than the sentence above it just named, and the two lines contradict each other exactly where the user is most likely to copy blind.
 
-**The slug is not optional, even at #1.** A bare `/dequeue` pops the queue head, so on every enqueue that lands anywhere else it resumes a different task than the sentence above it just named, and the two lines contradict each other in the one place the user is most likely to copy blind.
+No preamble, no summary of the handoff, no pasted sections. The user sat through the session that produced this doc and the doc is one `cat` away.
 
-No preamble, no summary of the handoff, no pasted sections, no explanation of how the queue works. The user sat through the session that produced this doc and the doc is one `cat` away, so anything past those two lines is reading it back to them. If the write surfaced something they must decide before the next session, that is one more sentence, not a paragraph.
+## The queue
 
-## Quick reference
+**The directory IS the priority queue.** No index file, nothing to desync.
 
-| Situation | Do |
-|---|---|
-| Work finished and shipped | No handoff. Commit messages carry it. |
-| Work unfinished, ending session | Enqueue, then `/clear` |
-| Context nearly full, task alive | Enqueue, then `/clear` — beats `/compact` by roughly 3x on cost, and the artifact outlives the session |
-| Same task, next day | Enqueue → `/clear` → `/dequeue <slug>` in the new session |
-| Resuming an item mid-queue | `/dequeue <slug>` — jumping the queue is allowed, silent starvation is not |
-| Reasoning worth keeping but task done | A memory or a plan doc, not a handoff |
+- A doc at the top level of `~/.claude/handoffs/` is a pending item. `p0` drop-everything, `p1` urgent, `p2` normal (default), `p3` backlog. Default `p2` silently unless the user hinted at urgency.
+- Minute-resolution timestamps mean one lexical sort is the whole queue: `ls ~/.claude/handoffs/p*.md | sort`.
+- **Re-opening an unfinished item keeps the original filename.** The timestamp records when the task first entered the queue, so a rewrite never resets its position.
+- Popping is `dequeue` moving the doc into `done/`. Enqueue never touches `done/`.
+- **Owner-QA is not a queue item (owner, 2026-09-02).** When the only thing left is the owner testing it himself on his device or prod, the code side is done: pop the doc. He files a new item if something breaks. Put the check recipe in the closing report instead.
+- **Never `mktemp`.** A temp path is gone tomorrow, outside git, and invisible to conversation search, which is every property a handoff exists to have.
 
-## Common mistakes
-
-**Writing to a temp path.** `mktemp` output is gone tomorrow and invisible to search. It goes in `~/.claude/handoffs/`.
-
-**Leading with history.** A successor's attention is spent top-down, so completed work sitting above the next action costs the most valuable part of it. History belongs under **State**, compressed.
-
-**Passing speculation off as fact.** Writing "X is caused by Y" when Y was inferred, not checked, sends the successor down a path you never validated. Prefix it `**Unverified:**` or check it before it goes in.
-
-**Copying what a file already holds.** Plans, diffs and issues are already durable. Link them. The handoff is only for what would otherwise be lost. The exception is acceptance criteria: when the next action is to check something, "correct" has to be stated, not linked.
-
-**Ending without showing it.** The user cannot correct a document they have not seen, and after `/clear` it is too late.
+Document template: `references/template.md`
+Pitfalls, quick-reference table, the full review checklist: `references/pitfalls.md`
