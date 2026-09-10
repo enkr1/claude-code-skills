@@ -15,6 +15,8 @@ Each consequence must land on an action: proceed, skip to step N, stop and repor
 
 Cover at minimum the artifact the next action operates on.
 
+**`**Branch:** <name>` on its own line whenever the work has a branch.** It is the only link from a merged branch back to this doc, and the `worktrees` finishing step greps the queue for it to ack the doc when the branch lands. Without it, the session that finishes the work never learns a doc is waiting: three merged items sat queued as pending on 2026-09-10 for exactly this.
+
 ## Next action
 
 The single thing to do first, concrete enough to start on without deciding anything. Then the 2-3 steps after it.

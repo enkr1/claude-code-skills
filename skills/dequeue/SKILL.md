@@ -24,6 +24,12 @@ ls ~/.claude/handoffs/p*.md 2>/dev/null | sort
 
 First line = top of queue. No matches = queue empty: say so and stop.
 
+### Reconcile before you list
+
+Work finishes outside `dequeue` and nothing acks the doc when it does, so settle judgement-free Done-whens first: a sha, `buildId` or deployed version is one `git merge-base --is-ancestor` away. Ack those, list the rest.
+
+**Never extend this to prose Done-whens.** "Paints from disk with the network throttled" needs running; inferring it from a merge commit closes work never done. 2026-09-10: three settled this way, a fourth looked identical in git log and was half shipped.
+
 ## Selecting
 
 - **Bare invocation** → take the first line of the sorted listing. Announce the pick before starting: item name, priority, and how many remain behind it. The user can redirect before you sink work in.
