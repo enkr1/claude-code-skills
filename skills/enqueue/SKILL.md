@@ -28,7 +28,7 @@ cp ~/.claude/skills/enqueue/references/template.md \
 
 ## APPEND, continuously
 
-The moment a fact is verified, a decision is made, or an approach is ruled out:
+The moment a fact is verified, a decision is made, an approach is ruled out, or your own work makes an earlier line FALSE (append to that same section, leading with `SUPERSEDES`):
 
 ```bash
 ~/.claude/scripts/hd.sh <slug> state 'migration applied locally, NOT on staging, checked local dev only'
@@ -54,7 +54,7 @@ Write the fact when you verify it and the citation is free. Write it at the end 
 
 The doc is already current, so closing is not a rebuild.
 
-1. Set **Next action**, its **Done when**, and its **Authority**. This is the one section that must be rewritten, because it is the only one describing the future.
+1. Set **Next action**, its **Done when**, and its **Authority**. This is the one section that must be rewritten, because it is the only one describing the future. `hd.sh <slug> next --replace '<body>'` does it without Reading the doc back; include your own **Done when:** line in the body to rewrite the trailers too.
 2. Run the **Preflight** block once and fix any check that no longer holds.
 3. Read the doc as if you had no memory of the session, and fix what that read turns up before showing it. Finding a flaw and shipping it anyway is the one outcome this pass exists to prevent.
 
