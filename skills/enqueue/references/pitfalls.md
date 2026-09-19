@@ -11,6 +11,7 @@
 | Resuming an item mid-queue | `/dequeue <slug>`. Jumping the queue is allowed, silent starvation is not. |
 | Reasoning worth keeping but task done | A memory or a plan doc, not a handoff |
 | Work you will not touch for a week | A Google Task. Not a handoff doc. |
+| Second topic raised mid-session | Its own doc, right then (~150 tokens). Not a bullet inside the current one. |
 
 ## Common mistakes
 
@@ -32,7 +33,7 @@
 
 ## Full review checklist
 
-The three questions in SKILL.md cover the common case. Use the full list when the work is unusually tangled, or when a previous handoff on this task already went wrong.
+SKILL.md keeps only the input check inline. These are the rest, and the whole list earns its keep when the work is tangled or a previous handoff on this task already went wrong.
 
 - Could you start work from Preflight plus Next action alone, and would you know when it is done?
 - If you found the work half-finished, would you know whether to complete it or stop?
@@ -43,15 +44,25 @@ The three questions in SKILL.md cover the common case. Use the full list when th
 - Is anything hedged in one section and asserted flatly in another?
 - Does every ask the user made this session appear in the doc, or have a stated reason for not appearing?
 
-## Recovering asks from a session that did not append as it went
+## The close inventory
 
-Only needed when a doc was NOT maintained write-through, which should now be rare. Misses cluster past 200k context, exactly where recall is weakest, so read the session's own messages back off disk rather than recalling them:
+**Every close, no exceptions.** The old gate ("only when the doc was not maintained write-through") was self-assessed, and the session that had lost a thread was exactly the session that judged itself fine. Misses cluster past 200k context, where recall is weakest, so read the session's own messages back off disk rather than recalling them:
 
 ```bash
-jq -r -f ~/.claude/skills/enqueue/asks.jq ~/.claude/projects/*/<session-id>.jsonl
+jq -rn -f ~/.claude/skills/enqueue/asks.jq ~/.claude/projects/*/<session-id>.jsonl
 ```
 
-The session id is the last path segment of the scratchpad directory named in the system prompt. One output line is one message, and a single message routinely carries several separate asks, so work at the level of the ask rather than the line. Every ask gets disposed of out loud: carried into the doc, done this session, or dropped with a reason. An ask you cannot classify is carried, never dropped.
+`-n` is required, and the script errors without it rather than printing a partial inventory that reads like a complete one. The session id is the last path segment of the scratchpad directory named in the system prompt. Output is deduped and in order; harness lines (system reminders, task notifications, compact-summary injections, teammate messages) are already stripped, and a user message over 4000 characters is truncated with a `…[+N chars]` marker rather than dropped, because dropping one is how an ask goes missing. One line is one message, and a single message routinely carries several separate asks, so work at the level of the ask rather than the line.
+
+**Dispose of every ask out loud**, one ASCII marker each, the same three `hd.sh ack` enforces on the doc's own open bullets:
+
+| Marker | Means |
+|---|---|
+| `DONE` | handled this session, and say what landed |
+| `MOVED <slug \| docs/feature-<name>.md \| GT>` | carried, and to exactly where |
+| `DROPPED <reason>` | deliberately not carried, with the reason |
+
+An ask you cannot classify is carried, never dropped. A slash command the harness echoed back is not an ask.
 
 ## Never `mktemp` for a handoff
 
