@@ -8,6 +8,8 @@ argument-hint: "[slug] — blank pops the top item; 'list' just shows the queue"
 
 Pop the top handoff off the queue, resume the work, and ack (archive) the doc only when the work is actually done. Paired with `enqueue`, which writes the items.
 
+**A dequeue ends in a pop, and ONLY a session that verified 100% of the Done-when may pop.** Both halves bind. Verification is your job to go and do, not to request, so "I could not verify it" is you doing less than the skill asks; but a Done-when 80% proven is not met, and popping is a claim that it is. Under 100%, it stays queued.
+
 **This is peek + ack, not naive pop.** The doc stays in the queue while you work. It moves to `done/` only when its Done-when condition is met, so a session that dies mid-task loses nothing: the item is still queued for the next session.
 
 ## The queue
@@ -30,6 +32,10 @@ Work finishes outside `dequeue` and nothing acks the doc when it does, so settle
 
 **Never extend this to prose Done-whens.** "Paints from disk with the network throttled" needs running; inferring it from a merge commit closes work never done. 2026-09-10: three settled this way, a fourth looked identical in git log and was half shipped.
 
+### Triage before you list
+
+Cap 20, no `p3`, enforced HERE and not at enqueue. Over either, clear the overflow oldest first before working the head: [references/triage.md](references/triage.md).
+
 ## Selecting
 
 - **Bare invocation** → take the first line of the sorted listing. Announce the pick before starting: item name, priority, and how many remain behind it. The user can redirect before you sink work in.
@@ -48,11 +54,12 @@ ls ~/.claude/handoffs/*<slug>*.md
 Read the doc top to bottom, then follow its own contract:
 
 1. **Run Preflight exactly as written.** Every check's mismatch consequence is in the doc; honour it. A failed check with a "stop and report" consequence means stop and report, not improvise.
-2. **Read Decisions, then start at Next action.** A decision recorded there can have superseded a gate the rest of the doc still assumes, so it is the one section worth reading before you begin. State / Why / Dead ends can wait until you deviate from the plan.
-3. **Respect Authority.** The doc says what you may fix alone versus what needs the user. Preflight surprises outside your authority go back to the user with the mismatch, not a workaround.
-4. If reality diverges from State beyond what Preflight anticipated, treat the doc as stale intel, not instructions: report the divergence, propose the adjusted plan, get a nod before proceeding.
+2. **Follow any `docs/feature-<name>.md` pointer BEFORE Next action, and read its §0 ledger first.** A handoff holds session state; the feature doc holds the decisions and the vocabulary, and it is the SSOT when the two disagree. The ledger says what is BUILT, UNBUILT, DROPPED or OPEN, and a struck decision there names a premise already tried, so reading it is what stops you re-proposing something the owner killed last week.
+3. **Read Decisions, then start at Next action.** A decision recorded there can have superseded a gate the rest of the doc still assumes, so it is the one section worth reading before you begin. State / Why / Dead ends can wait until you deviate from the plan.
+4. **Respect Authority.** The doc says what you may fix alone versus what needs the user. Preflight surprises outside your authority go back to the user with the mismatch, not a workaround.
+5. If reality diverges from State beyond what Preflight anticipated, treat the doc as stale intel, not instructions: report the divergence, propose the adjusted plan, get a nod before proceeding.
 
-**The doc you just popped stays live for the rest of the session.** From the moment you resume, every fact you verify, decision the user makes, or approach you rule out goes straight back into it as you go:
+**The doc you just popped stays live for the rest of the session, and so does the feature doc it points at.** Session state goes back into the handoff; a DECISION the user makes goes into the feature doc in the same commit as the code it governs, never only into the handoff, which is thrown away when the task ends:
 
 ```bash
 ~/.claude/scripts/hd.sh <slug> state 'rung now returns lastActive, verified against the detail payload'
@@ -68,25 +75,16 @@ When the doc's **Done when** condition is observably met, and only then:
 mv ~/.claude/handoffs/p2-202608031845-parser-timeout-fix.md ~/.claude/handoffs/done/
 ```
 
+**Verification is yours to OBTAIN, not to request.** Go get the proof: rebuild the harness, start the app, seed the data, point the local build at real data. Proof is running it this session and reading the result; a commit subject that looks right, a merge or "probably shipped" is inference and never acks. Parking is RARE, because most of the time 100% is reachable, so "blocked" is a claim that needs testing like any other and "not enough context budget" is a trade you may make but must say out loud, never dress as impossible. Park only when the proof needs his credentials, his hardware or his authority and nothing else can establish the substance, leaving the remaining step named in one line. Never ack around a gap: a partial proof is reported, not cashed. Asked four times on 2026-09-13.
+
 Then report: what was completed, evidence for Done-when (which env verified), and the remaining queue. `rm` is never the pop — `done/` is the archive and the undo.
 
 **One pop per invocation.** After acking, show what's next in the queue and stop. The user decides whether to `/dequeue` again; chaining items uninvited is scope grab.
 
 ## Ending unfinished
 
-Session ending with Done-when not yet met → run `enqueue`'s CLOSE step, same filename so the queue position holds.
-
-If you appended as you worked, CLOSE is small: rewrite **Next action** only (`~/.claude/scripts/hd.sh <slug> next --replace '<body>'` swaps the body and keeps Done when / Authority unless the body carries its own), re-run Preflight, hand over. Everything else is already current. If you did not append, you are now paying the full rebuild at the worst context price of the session, which is the cost the write-through design exists to avoid. Do not repeat it next time.
-
-Partially done is the likeliest state a successor inherits. Say plainly in State what you finished, what you touched but did not finish, and what you never reached.
+The exception, not the exit, and only after you have tried to obtain the proof yourself: [references/ending-unfinished.md](references/ending-unfinished.md).
 
 ## Edge cases
 
-| Found | Do |
-|---|---|
-| Queue empty | Say so, stop. Nothing to invent. |
-| Doc's remaining work is owner-QA only (his device, his account, his eyes) | Pop it now, no verification owed (owner, 2026-09-02). Report the check recipe in one line; he files a new item if it breaks. |
-| Preflight shows work already done (someone finished it outside the queue) | Verify Done-when independently, then ack with a note that it was found complete. Do not redo it. |
-| Doc without `p` prefix at top level | Legacy item: treat as p2. Rename it into format (`p2-<yyyymmddhhmm from its date>-<slug>.md`) so the sort stays honest. |
-| Two docs about the same task | Read both, keep the newer as truth, move the older to `done/` with a note in the survivor. |
-| Doc's Preflight references a repo/branch that no longer exists | Outside authority by definition. Report, ask, do not reconstruct. |
+[references/edge-cases.md](references/edge-cases.md)

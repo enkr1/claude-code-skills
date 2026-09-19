@@ -52,3 +52,7 @@ jq -r -f ~/.claude/skills/enqueue/asks.jq ~/.claude/projects/*/<session-id>.json
 ```
 
 The session id is the last path segment of the scratchpad directory named in the system prompt. One output line is one message, and a single message routinely carries several separate asks, so work at the level of the ask rather than the line. Every ask gets disposed of out loud: carried into the doc, done this session, or dropped with a reason. An ask you cannot classify is carried, never dropped.
+
+## Never `mktemp` for a handoff
+
+A temp path is gone tomorrow, outside git, and invisible to conversation search, which is every property a handoff exists to have. Moved here from SKILL.md 2026-09-11 to make room for the close-time input check; the rule is unchanged.
