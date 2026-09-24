@@ -88,7 +88,7 @@ NEVER as labels.
 |-------|---------------------|--------------|
 | `cc-` | which Claude Code lane touched this? | `cc-local` (interactive session on this machine) / `cc-scheduled` (autonomous loop or cron pass) / `cc-recommend-close` (loop verdict: stale or duplicate, awaiting human close) / `cc-no-repro` (local repro attempt failed; loops skip re-picking) |
 | `src-` | where did this issue come from? | `src-user-feedback` / `src-llm-output` (LLM-output-rooted; fix prompt or model, not FE) / `src-teams` (auto-filed from a Teams thread) / `src-meeting` (filed by meeting-triage) |
-| `needs-` | what is this blocked on? | `needs-backend` / `needs-research` / `needs-triage` / `needs-design` (visual call routes through the design lead; scaffold + stop) |
+| `needs-` | what is this blocked on? | `needs-backend` / `needs-research` / `needs-triage` / `needs-design` (visual call routes through the design lead; scaffold + stop) / `needs-human-test` (a person on a real device or logged-in dev must verify; RRG runbook writes it on run logs with unticked 🤚 boxes and on human-only findings) |
 
 Rules:
 - A new value must answer its facet's question; a new facet = a new prefix + a row here.
