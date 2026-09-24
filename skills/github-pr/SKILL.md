@@ -128,7 +128,7 @@ is on the PR after create/edit — eyeball it, same rule as `issue.py start`.
 Closes #<issue>
 ```
 
-**On `Closes #<issue>` here:** integration (`dev`) is not the default branch, so this keyword is **armed-not-fired** — merging the PR to `dev` does NOT close the issue. It closes only when the release PR carries it to `main` (RELEASE §B Step 2a re-collects every open issue in the range). So: keep `Closes #<issue>` in every feature PR (it's the machine-readable link the release step harvests), but don't expect the issue to close at dev-merge time, and never hand-close it early — let the release close it, so "closed" always means "in prod."
+**On `Closes #<issue>` here:** integration (`dev`) is not the default branch, so this keyword is **armed-not-fired** — merging the PR to `dev` does NOT close the issue. It closes only when the release PR carries it to `main` (RELEASE §B Step 2a re-collects every open issue in the range). So: keep `Closes #<issue>` in every feature PR (it's the machine-readable link the release step harvests), and **close the issue by hand at dev-merge time (Phase 8)**: "closed" means "on dev", not "in prod" (decided 2026-09-24 after 30 shipped issues piled up open while prod releases were on hold).
 
 **Tag `reviewed` (bright-green label) on the ISSUE** (and the PR). Reaching
 Phase 7 means Phases 1–6 (simplify → review → tests → verify → E2E) all passed,
