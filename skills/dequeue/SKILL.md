@@ -50,7 +50,7 @@ Read the doc top to bottom, then follow its own contract:
 jq -rn -f ~/.claude/skills/enqueue/asks.jq ~/.claude/projects/*/<source-session>.jsonl
 ```
 
-**The doc stays live for the rest of the session, and so does the feature doc it points at.** Session state goes back into the handoff (`hd.sh <slug> state '<fact>'`); a DECISION goes into the feature doc in the same commit as the code it governs, never only into the handoff, which the task's end throws away. This is the write-through half of `enqueue`.
+**The doc stays live for the rest of the session, and so does the feature doc it points at.** Session state goes back into the handoff (`hd.sh <slug> state '<fact>'`), and a Preflight or Next action the work has overtaken is rewritten, since the next session obeys it; a DECISION goes into the feature doc in the same commit as the code it governs, never only into the handoff. This is the write-through half of `enqueue`.
 
 ## The pop (ack)
 
