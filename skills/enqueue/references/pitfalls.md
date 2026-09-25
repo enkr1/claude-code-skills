@@ -29,13 +29,20 @@
 
 **Ending without showing it.** The user cannot correct a document they have not seen, and after `/clear` it is too late.
 
+**Writing a specification into a handoff.** A handoff holds SESSION STATE: where you were standing, preflight, the branch, what is half-applied, the one next action. The test is whether the content survives the task finishing, so "the stamp already ran on prod" belongs here and "delivery starts a package, not payment" belongs in `docs/feature-<name>.md` with the handoff pointing at it.
+
 **Letting the doc grow past 8KB.** At that size it is a spec wearing a handoff's clothes. Move it into the repo and point at it. If it is on its third round of amendments, the task is bigger than a session and needs splitting, not a better handoff.
 
 ## Full review checklist
 
-SKILL.md keeps only the input check inline. These are the rest, and the whole list earns its keep when the work is tangled or a previous handoff on this task already went wrong.
+**Does every input Next action needs already exist?** Name the source of each number, field, endpoint and file it tells the successor to use. A step lifted from a mock is the usual failure: the mock had fake data, so the step reads as buildable while nothing in the app produces it.
+
+**An open question with no default is a blocker; decide it at close.** Record the call and its reasoning, or put it in Authority with Next action's first line saying the work stops until the owner answers. Parked with neither, the successor stalls on a doc that looked complete.
+
+The rest earns its keep when the work is tangled or a previous handoff on this task already went wrong.
 
 - Could you start work from Preflight plus Next action alone, and would you know when it is done?
+- Does Done when still describe what the user wants, after every scope change they made this session?
 - If you found the work half-finished, would you know whether to complete it or stop?
 - Does every claim in State say how it was checked, and could that check actually prove it?
 - Is anything asserted that you did not actually verify?

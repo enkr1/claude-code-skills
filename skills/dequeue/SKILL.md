@@ -6,17 +6,17 @@ argument-hint: "[slug]: blank pops the top item; 'list' just shows the queue"
 
 # Dequeue
 
-Pop the top handoff, resume the work, and ack (archive) the doc only when it is actually done. Paired with `enqueue`, which writes the items.
+Pop the top handoff, resume the work, and ack (archive) the doc only when it is actually done.
 
-**A dequeue ends in a pop, and ONLY a session that verified 100% of the Done-when may pop.** Both halves bind. Verification is your job to go and do, so "I could not verify it" is doing less than the skill asks; but a Done-when 80% proven is not met, and popping claims it is. Under 100%, it stays queued.
+**A dequeue ends in a pop, and ONLY a session that verified 100% of the CURRENT Done-when may pop.** Both halves bind. Verification is your job to go and do, so "I could not verify it" is doing less than the skill asks; but a Done-when 80% proven is not met, and popping claims it is. Under 100%, it stays queued. A Done-when a later user decision overtook is stale: rewrite it (`hd.sh <slug> next --replace`) before verifying.
 
-**This is peek + ack, not naive pop.** The doc stays in the queue while you work and moves to `done/` only once Done-when is met, so a session that dies mid-task loses nothing.
+**Peek + ack, not naive pop:** the doc stays queued until Done-when is met, so a session that dies mid-task loses nothing.
 
 **Context size never justifies refusing, narrowing or deferring what the user asked for.** It is a prompt to offer the close; their "do it" ends it.
 
 ## The queue
 
-`~/.claude/handoffs/` is the queue, no index file. A pending item is `p<N>-<yyyymmddhhmm>-<slug>.md` at the top level, `p0` (drop-everything) through `p3` (backlog), sorted lexically: lower p first, oldest first within a priority. `done/` holds popped items and is never resumed from.
+`~/.claude/handoffs/` is the queue, no index file. A pending item is `p<N>-<yyyymmddhhmm>-<slug>.md` at the top level, `p0` (drop-everything) through `p3` (backlog), sorted lexically: lower p first, oldest first within a priority. `done/` holds popped items and is never resumed from; `drafts/` holds docs nobody asked to queue.
 
 `ls ~/.claude/handoffs/p*.md 2>/dev/null | sort` prints it: first line is the top, no matches means empty, and empty means say so and stop.
 
@@ -24,7 +24,7 @@ Pop the top handoff, resume the work, and ack (archive) the doc only when it is 
 
 **Reconcile.** Work finishes outside `dequeue` and nothing acks the doc, so settle judgement-free Done-whens first: a sha, `buildId` or deployed version is one `git merge-base --is-ancestor` away. Ack those, list the rest. **Never a prose Done-when**, which has to be run: inferring one from a merge commit closes work never done, and did on 2026-09-10.
 
-**Triage.** Cap 20, no `p3`, enforced HERE and not at enqueue. Over either, clear the overflow oldest first before working the head: [references/triage.md](references/triage.md).
+**Triage.** Cap 20 (also enforced by `hd.sh promote`), no `p3`. Over either, clear the overflow oldest first before working the head: [references/triage.md](references/triage.md).
 
 ## Selecting
 
@@ -44,17 +44,13 @@ Read the doc top to bottom, then follow its own contract:
 4. **Respect Authority.** It says what you may fix alone versus what needs the user. Preflight surprises outside it go back with the mismatch, not a workaround.
 5. Reality diverging from State beyond what Preflight anticipated makes the doc stale intel, not instructions: report the divergence, propose the adjusted plan, get a nod.
 
-**Thin Decisions or Why means the discussion is still on disk**, so read it back off the doc's `**Source session:**` instead of guessing or re-asking the user:
-
-```bash
-jq -rn -f ~/.claude/skills/enqueue/asks.jq ~/.claude/projects/*/<source-session>.jsonl
-```
+**Thin Decisions or Why?** Read the discussion back off `**Source session:**`, never guess or re-ask: [references/edge-cases.md](references/edge-cases.md).
 
 **The doc stays live for the rest of the session, and so does the feature doc it points at.** Session state goes back into the handoff (`hd.sh <slug> state '<fact>'`), and a Preflight or Next action the work has overtaken is rewritten, since the next session obeys it; a DECISION goes into the feature doc in the same commit as the code it governs, never only into the handoff. This is the write-through half of `enqueue`.
 
 ## The pop (ack)
 
-When the doc's **Done when** condition is observably met, and only then:
+When the doc's **Done when** is observably met, or the user says it is done, and only then:
 
 ```bash
 ~/.claude/scripts/hd.sh ack <slug>
