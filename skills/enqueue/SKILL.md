@@ -26,7 +26,7 @@ cp ~/.claude/skills/enqueue/references/template.md \
    ~/.claude/handoffs/drafts/p2-$(date +%Y%m%d%H%M)-<slug>.md
 ```
 
-`<slug>` is 2-4 kebab-case words naming the task, not the session. Fill in `**Source session:**` in the same pass: it is the only link back to the discussion, and it is what lets the successor recover an ask neither of you wrote down.
+`<slug>` is 2-4 kebab-case words naming the task, not the session. Fill in `**Source session:**` in the same pass: it is the only link back to the discussion.
 
 A draft idle for 72 hours expires into `done/` on its own. Work further out than that is a Google Task.
 
@@ -61,7 +61,7 @@ The doc is already current, so closing is not a rebuild.
 3. Run the **Preflight** block once and fix any check that no longer holds.
 4. Read the doc as if you had no memory of the session, and fix what that read turns up before showing it. Finding a flaw and shipping it anyway is what this pass exists to prevent. Checklist: [references/pitfalls.md](references/pitfalls.md).
 
-**Done when met this session → `hd.sh ack <slug>` in that turn**, whoever opened the doc; no dequeue needed, and the user saying it is done is proof. When the user changes the scope, rewrite Done when in the same turn, because a stale one can never be met and keeps finished work queued. Open-ended residue (notes that accrue, a question for a domain file) is `MOVED` to its home, never a reason to stay queued.
+**Done when met this session → `hd.sh ack <slug>` in that turn**, whoever opened the doc; no dequeue needed, and the user saying it is done is proof. When the user changes the scope, rewrite Done when in the same turn, since a stale one can never be met. **The user's own QA is never part of Done when**: shipped and verified by you is done, and they come back if it breaks, so no reminder either. Open-ended residue (accruing notes, a domain question) is `MOVED` to its home, never a reason to stay queued.
 
 **A handoff holds SESSION STATE, never a specification. Cap 8KB.**
 

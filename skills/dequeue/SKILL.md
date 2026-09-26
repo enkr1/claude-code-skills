@@ -10,7 +10,7 @@ Pop the top handoff, resume the work, and ack (archive) the doc only when it is 
 
 **A dequeue ends in a pop, and ONLY a session that verified 100% of the CURRENT Done-when may pop.** Both halves bind. Verification is your job to go and do, so "I could not verify it" is doing less than the skill asks; but a Done-when 80% proven is not met, and popping claims it is. Under 100%, it stays queued. A Done-when a later user decision overtook is stale: rewrite it (`hd.sh <slug> next --replace`) before verifying.
 
-**Peek + ack, not naive pop:** the doc stays queued until Done-when is met, so a session that dies mid-task loses nothing.
+**Peek + ack, not naive pop:** the doc stays queued until Done-when is met, so a dying session loses nothing.
 
 **Context size never justifies refusing, narrowing or deferring what the user asked for.** It is a prompt to offer the close; their "do it" ends it.
 
@@ -50,7 +50,7 @@ Read the doc top to bottom, then follow its own contract:
 
 ## The pop (ack)
 
-When the doc's **Done when** is observably met, or the user says it is done, and only then:
+When the doc's **Done when** is observably met (a clause that is only the user's QA counts as met), or the user says it is done:
 
 ```bash
 ~/.claude/scripts/hd.sh ack <slug>
