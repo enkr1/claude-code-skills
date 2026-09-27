@@ -23,7 +23,7 @@ Cover at minimum the artifact the next action operates on.
 
 The single thing to do first, concrete enough to start on without deciding anything. Then the 2-3 steps after it.
 
-**Done when:** the condition that ends the whole block, observable enough to tell finished from nearly-finished. Where a step is to review, verify or finish something, its criteria go here in full: a successor holding only a pointer has to re-derive what "correct" means before it can start.
+**Done when:** the condition that ends the whole block, observable enough to tell finished from nearly-finished. Where a step is to review, verify or finish something, its criteria go here in full: a successor holding only a pointer has to re-derive what "correct" means before it can start. Never a clause that needs the owner's eye or confirmation (added 2026-09-28, third time he asked): his QA is not a condition and gets no todo unless he asks for one, because a clause only he can meet makes the item unpoppable and turns into a chore he never requested.
 
 **Authority:** what the successor may fix on its own versus what it must stop and report. Say this explicitly for the partly-done case, since finding three of five items already handled is the likeliest way reality differs.
 
