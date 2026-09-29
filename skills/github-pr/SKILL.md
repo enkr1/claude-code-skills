@@ -89,7 +89,7 @@ Run in `app_dir`, in parallel where possible: `verify.typecheck`, `verify.lint`,
 ## Phase 5 — E2E browser test (`--skip-e2e`)
 Auto-skip if no `.tsx` changed. **🚨 HARD GATE for bug-fix PRs (gitmoji 🐛 / label bug / branch `fix/*`): NOT skippable.** A bugfix must **reproduce the broken behavior, then confirm it gone on a real running build** before merge — green tsc/lint/build is not proof. Prefer the live deploy via Chrome MCP (reaches authed pages while the user's session is live; clear the service-worker + caches first so you test the fresh bundle), else have the user click through. State before (broken) and after (working) explicitly. Can't verify → STOP, don't merge on plausibility. (Born from a "fix" that shipped, merged, and deployed green without fixing the bug.)
 
-Use the `tester` agent if available: new tab → navigate to affected pages → `read_page` renders → `read_console_messages` (no errors) → `read_network_requests` (no 4xx/5xx) → `gif_creator` evidence. Failures → fix, re-run (max 2).
+Use Chrome MCP directly: new tab → navigate to affected pages → `read_page` renders → `read_console_messages` (no errors) → `read_network_requests` (no 4xx/5xx) → `gif_creator` evidence. Failures → fix, re-run (max 2).
 
 ## Phase 6 — Commit
 Invoke the `commit` skill: gitmoji + conventional, single line, stage only relevant files, **no AI-signature trailer**. Nothing uncommitted → skip.
@@ -128,7 +128,7 @@ is on the PR after create/edit — eyeball it, same rule as `issue.py start`.
 Closes #<issue>
 ```
 
-**On `Closes #<issue>` here:** integration (`dev`) is not the default branch, so this keyword is **armed-not-fired** — merging the PR to `dev` does NOT close the issue. It closes only when the release PR carries it to `main` (RELEASE §B Step 2a re-collects every open issue in the range). So: keep `Closes #<issue>` in every feature PR (it's the machine-readable link the release step harvests), and **close the issue by hand at dev-merge time (Phase 8)**: "closed" means "on dev", not "in prod" (decided 2026-09-24 after 30 shipped issues piled up open while prod releases were on hold).
+**On `Closes #<issue>` here:** "closed" means "on `dev`", not "in prod" (decided 2026-09-24, reaffirmed 2026-09-29: `dev` is where all testing happens and an issue is a task ticket, not a dependency gate). GitHub only fires the keyword on the default branch, so a merge into `dev` does not close anything by itself. Ketchup closes it with a sweep instead: `_work/scripts/close-dev-merged.sh` runs on every SessionStart and closes each open issue named by `Closes|Fixes|Resolves #N` in a PR merged into `dev`, whoever merged it and wherever (2026-09-29, after hand-merged PRs #1535-#1537 left their issues open because Phase 8 only runs when this session merges). So write the keyword exactly (`Closes #N`, no backticks or line break before `#N`), use `Refs #N` for partial work that must stay open, and split a blocked backend half into its own backend-repo issue rather than holding the frontend issue open. RELEASE §B Step 2a still re-collects any stragglers.
 
 **Tag `reviewed` (bright-green label) on the ISSUE** (and the PR). Reaching
 Phase 7 means Phases 1–6 (simplify → review → tests → verify → E2E) all passed,
@@ -148,7 +148,7 @@ Auto-skip if no linked issue. Else, **only when the user wants it merged** (this
 ```bash
 gh pr merge <N> --squash --delete-branch
 <issue_helper> end <issue>          # sets end/target date, verifies fields (if issue_helper set)
-gh issue close <issue> --comment "Shipped in PR #<N>. <pipeline table>"
+gh issue close <issue> --comment "Shipped in PR #<N>. <pipeline table>"   # Ketchup: the SessionStart sweep also catches merges done outside a session
 git checkout <integration> && git pull && git branch -d "$BRANCH"
 ```
 
@@ -186,7 +186,7 @@ gh pr create --base <release_branch> --head <integration_branch> \
 Body: summary · what's-new grouped by theme (with `#issue` refs) · stats table · collapsible full commit list grouped by type (`feat`/`fix`/`fix(security)`/`style`/`refactor`/`revert`/`docs`) with 7-char SHAs · **`Closes #N` lines for every shipped open issue (see Step 2a)** · **Release Regression Gate sign-off** (see Step 2b) · **expiring-scaffolding list** (see Step 2c). **No AI-signature trailer.**
 
 ## Step 2a — Collect closing issues (MANDATORY — this is where dev-line issues actually close)
-GitHub only auto-closes an issue when a `Closes #N` keyword lands on the **default branch** (`release_branch`). Feature→integration PRs carry `Closes #N` but it is **armed-not-fired** — integration isn't the default branch. **The release PR is the ONLY place those issues close.** So the release PR body MUST list `Closes #N` for every open issue shipped in the range — do not rely on the per-commit `Closes` or the `#issue` refs in the what's-new section (refs alone don't close).
+GitHub only auto-closes an issue when a `Closes #N` keyword lands on the **default branch** (`release_branch`). Feature→integration PRs carry `Closes #N`, and in Ketchup the SessionStart sweep (`_work/scripts/close-dev-merged.sh`) already closed those at dev-merge, since closed = on `dev`. This step is the backstop for anything the sweep missed (older than its 14-day window, or a project without a sweep): the release PR body lists `Closes #N` for every issue in the range that is still OPEN. Do not rely on the per-commit `Closes` or the `#issue` refs in the what's-new section (refs alone don't close).
 
 Build the list mechanically, never by eyeballing subjects (a `(#N)` in a subject is often a **PR** number, not an issue). Harvest from **two** sources and union them — the branch name is the reliable one, commit prose is the backfill:
 
@@ -287,4 +287,4 @@ If `release.draft`: PR is draft (review gate). If `release.native_automerge` is 
 
 ## On disk
 - `skills/pr/SKILL.md` — this skill. `config.json` (gitignored) — your project values; copy from `config.example.json`.
-- Composes `simplify`, `comprehensive-review`, `commit`, the `tester` agent, and (if configured) a `github-issue` helper. **Degrade rule:** a missing composed dep → skip that phase with a note, never hard-fail the pipeline.
+- Composes `simplify`, `comprehensive-review`, `commit`, and (if configured) a `github-issue` helper. **Degrade rule:** a missing composed dep → skip that phase with a note, never hard-fail the pipeline.
