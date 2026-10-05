@@ -271,6 +271,8 @@ Any missing SHA → update the PR body.
 ## Step 4 — Draft + hand off
 If `release.draft`: PR is draft (review gate). If `release.native_automerge` is false (default), **do NOT enable auto-merge** — leave it for manual review/merge. Optionally watch the release deploy (§A Phase 9 with `{branch}`=release, if `"release"` ∈ `deploy.watch_on`).
 
+**Tag (if `release.tag` is `manual`):** right after the release PR merges, cut the tag and GitHub Release per [references/release-tag.md](references/release-tag.md). `auto` means a CI workflow does it; `none` skips.
+
 **Regression-gate hold (if `release.regression_gate.block_until_checked`):** the release PR MUST stay a draft until every box in the Step 2b exit-criteria block is ticked. Never mark it ready-for-review, never enable auto-merge, and never merge it while any gate box is unchecked. Server-side branch protection is unavailable on this GitHub plan, so this hold IS the gate — do not bypass it. On hand-off, tell the human: "Release is drafted and held by the Regression Gate. Walk `<doc>` + `<human_doc>`, tick the boxes, then mark ready and merge."
 
 ---

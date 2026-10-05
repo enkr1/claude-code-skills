@@ -21,11 +21,13 @@
     "watch_on": ["integration", "release"]
   },
   "release": {
-    "_comment": "changelog: 'manual' (maintain changelog_path), 'auto' (CI generates notes, skip the manual step), or 'none'. draft: open release PRs as draft for review.",
+    "_comment": "changelog: 'manual' (maintain changelog_path), 'auto' (CI generates notes, skip the manual step), or 'none'. draft: open release PRs as draft for review. tag: 'manual' (cut the vYYYY.MM.DD tag + GitHub Release after the release merge, references/release-tag.md), 'auto' (a CI workflow does it), or 'none'. tag_tz: timezone the tag date is taken in.",
     "changelog": "manual",
     "changelog_path": "CHANGELOG.md",
     "title_prefix": "Release: ",
     "draft": true,
-    "native_automerge": false
+    "native_automerge": false,
+    "tag": "none",
+    "tag_tz": "UTC"
   }
 }
