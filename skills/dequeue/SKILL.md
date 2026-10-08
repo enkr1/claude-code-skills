@@ -18,7 +18,7 @@ Pop the top handoff, resume the work, and ack (archive) the doc only when it is 
 
 `~/.claude/handoffs/` is the queue, no index file. A pending item is `p<N>-<yyyymmddhhmm>-<slug>.md` at the top level, `p0` (drop-everything) through `p3` (backlog), sorted lexically: lower p first, oldest first within a priority. `done/` holds popped items and is never resumed from; `drafts/` holds docs nobody asked to queue.
 
-`~/.claude/scripts/hd.sh list` prints it, claimed docs marked `(claimed 2h ago)`: first line is the top, no output means empty, and empty means say so and stop.
+`~/.claude/scripts/hd.sh list` prints it: first line is the top, no output means empty, and empty means say so and stop.
 
 **Before you list**, reconcile (ack judgement-free Done-whens: a sha, `buildId` or deployed version, never a prose one) and triage (cap 20, no `p3`, also enforced by `hd.sh promote`): [references/triage.md](references/triage.md).
 
@@ -31,7 +31,7 @@ Pop the top handoff, resume the work, and ack (archive) the doc only when it is 
 
 ## Claiming
 
-Right after the pick, before Preflight: `~/.claude/scripts/hd.sh claim <slug>`. Refused: a bare invocation takes the next unclaimed doc, a named slug stops and reports. `--force` only on the user's word; stale claims: see Edge cases.
+Right after the pick, before Preflight: `~/.claude/scripts/hd.sh claim <slug>`. Refused: a bare invocation takes the next unclaimed doc; a named slug is the user's go, so say who holds it and since when in one line, then `claim --force`, never ask.
 
 ## Resuming
 
@@ -63,7 +63,7 @@ Then report what was completed, the evidence for Done-when (which env), and the 
 
 **One pop per invocation.** After acking, show what's next in the queue and stop; chaining items uninvited is scope grab.
 
-**Parking, and ending with the work unfinished**, are the exception and not the exit, and only after you have tried to obtain the proof yourself: [references/ending-unfinished.md](references/ending-unfinished.md).
+**Parking, and ending with the work unfinished**, are the exception and not the exit, and only after you have tried to obtain the proof yourself. Both end with `hd.sh release <slug>`: [references/ending-unfinished.md](references/ending-unfinished.md).
 
 ## Edge cases
 
