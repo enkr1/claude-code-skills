@@ -18,21 +18,20 @@ Pop the top handoff, resume the work, and ack (archive) the doc only when it is 
 
 `~/.claude/handoffs/` is the queue, no index file. A pending item is `p<N>-<yyyymmddhhmm>-<slug>.md` at the top level, `p0` (drop-everything) through `p3` (backlog), sorted lexically: lower p first, oldest first within a priority. `done/` holds popped items and is never resumed from; `drafts/` holds docs nobody asked to queue.
 
-`ls ~/.claude/handoffs/p*.md 2>/dev/null | sort` prints it: first line is the top, no matches means empty, and empty means say so and stop.
+`~/.claude/scripts/hd.sh list` prints it, claimed docs marked `(claimed 2h ago)`: first line is the top, no output means empty, and empty means say so and stop.
 
-### Before you list
-
-**Reconcile.** Work finishes outside `dequeue` and nothing acks the doc, so settle judgement-free Done-whens first: a sha, `buildId` or deployed version is one `git merge-base --is-ancestor` away. Ack those, list the rest. **Never a prose Done-when**, which has to be run: inferring one from a merge commit closes work never done, and did on 2026-09-10.
-
-**Triage.** Cap 20 (also enforced by `hd.sh promote`), no `p3`. Over either, clear the overflow oldest first before working the head: [references/triage.md](references/triage.md).
+**Before you list**, reconcile (ack judgement-free Done-whens: a sha, `buildId` or deployed version, never a prose one) and triage (cap 20, no `p3`, also enforced by `hd.sh promote`): [references/triage.md](references/triage.md).
 
 ## Selecting
 
-- **Bare invocation** → the first line of the sorted listing. Announce the pick first (item, priority, how many remain behind it) so the user can redirect before you sink work in.
+- **Bare invocation** → the first line of the listing without a `(claimed …)` mark. Announce the pick first (item, priority, how many remain behind it, siblings sharing its `**Source session:**`) so the user can redirect before you sink work in.
 - **With a slug** → straight to that one doc, no listing first: `ls ~/.claude/handoffs/*<slug>*.md`. Zero matches → then fall back to the full listing. Jumping the queue needs no ceremony; report what you skipped at the END, off the closing listing.
 - **"list" / "what's queued"** → the sorted queue, one line each (priority, age, slug, the doc's Next action first line). No pop, no work.
 - Ambiguous slug → show the matches, ask.
-- **Name the doc's siblings at the pick.** Docs sharing a `**Source session:**` came out of one discussion, so listing them makes "all of them" one word from the user.
+
+## Claiming
+
+Right after the pick, before Preflight: `~/.claude/scripts/hd.sh claim <slug>`. Refused: a bare invocation takes the next unclaimed doc, a named slug stops and reports. `--force` only on the user's word; stale claims: see Edge cases.
 
 ## Resuming
 

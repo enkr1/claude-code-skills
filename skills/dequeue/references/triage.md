@@ -1,4 +1,10 @@
-# Triage the queue before working the head
+# Before you list: reconcile, then triage
+
+## Reconcile
+
+Work finishes outside `dequeue` and nothing acks the doc, so settle judgement-free Done-whens first: a sha, `buildId` or deployed version is one `git merge-base --is-ancestor` away. Ack those, list the rest. **Never a prose Done-when**, which has to be run: inferring one from a merge commit closes work never done, and did on 2026-09-10.
+
+## Triage
 
 **The cap is enforced HERE, not at enqueue.** Enqueue fires at end of session with context burnt, when nobody triages ninety items; popping is the fresh moment.
 
