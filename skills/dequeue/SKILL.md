@@ -55,7 +55,7 @@ When the doc's **Done when** is observably met (a clause that is only the user's
 ~/.claude/scripts/hd.sh ack <slug>
 ```
 
-**Every bullet under Open questions and Still open is disposed of first**, marked in place as `DONE`, `MOVED <slug | docs/feature-<name>.md | GT>` or `DROPPED <reason>`. `ack` refuses the move while one is unmarked and prints it, because an archived doc's open threads are dead threads.
+**Every bullet under Open questions and Still open is disposed of first**, marked in place as `DONE`, `MOVED <slug | docs/feature-<name>.md | GT>` or `DROPPED <reason>`. `ack` refuses while one is unmarked, since an archived doc's open threads are dead. With a `docs/feature-*.md` pointer it also needs a `**Sweep:**` line and refuses on any stale status line it finds in docs/; its message says how to clear it.
 
 **Verification is yours to OBTAIN, not to request.** Go get the proof: rebuild the harness, start the app, point the local build at real data. Proof is running it this session and reading the result; a commit subject that looks right, a merge or "probably shipped" is inference and never acks. Never ack around a gap: a partial proof is reported, not cashed. `rm` is never the pop, and `done/` is the undo.
 

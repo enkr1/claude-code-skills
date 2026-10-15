@@ -1,5 +1,7 @@
 # Handoff: <task> (<date>)
 
+**Sweep:** <the words the docs use for what this work changes the status of, comma-separated; a phrase beats a common word. Required by `hd.sh ack` whenever the doc points at a `docs/feature-*.md`>
+
 Seven sections, inverted pyramid. A successor who runs Preflight and reads Next action can start correctly without the rest. Cut any section with nothing real in it: an empty "Dead ends" is honest, a padded one wastes the successor's first minutes.
 
 ## Preflight
