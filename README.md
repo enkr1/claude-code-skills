@@ -14,6 +14,7 @@ Skills I built for my own Claude Code workflow and kept reaching for. Sharing th
 | [**threads**](skills/threads/SKILL.md) | A branching task tracker that never drops a ball: per-chat trees, an all-chats view, auto-reinjected so Claude never forgets. |
 | [**commit**](skills/commit/SKILL.md) | Gitmoji and conventional commits, with anti-AI-signature rules. |
 | [**comprehensive-review**](skills/comprehensive-review/SKILL.md) | Staff-engineer ship gate: reviews the design, composes the built-in `/code-review` for the diff, then gives one decisive verdict. |
+| [**council**](skills/council/SKILL.md) | Karpathy's llm-council on a Claude subscription alone: stance seats answer blind, critique each other anonymously, then a chairman gives one call plus a ledger of every disagreement. No OpenRouter. |
 | [**md2pdf**](skills/md2pdf/SKILL.md) | Markdown to clean, print-ready PDF via pandoc and headless Chromium (no LaTeX). Cross-browser, batch, with em-dash and page-count checks. |
 | [**github-issue**](skills/github-issue/SKILL.md) | Full issue lifecycle with org-native Type/Priority/Effort fields + a Project board: create/start/end set every field via `gh` + GraphQL (no `--type` gap). Credential-free (uses your own `gh auth`); copy `config.example.json` to your own `config.json`. |
 | [**github-pr**](skills/github-pr/SKILL.md) | One PR skill that reads your branch and auto-routes: a feature branch runs the finish pipeline (simplify → review → tests → verify → E2E → commit → PR → close issue) to your integration branch; the integration branch cuts a release PR to main. Every PR comes out identically shaped. Config-driven, credential-free; pairs with github-issue. |
@@ -118,6 +119,18 @@ Not another code reviewer, it **composes** the built-in `/code-review` and adds 
 4. **Verdict**, one decision: REJECT / NEEDS WORK / APPROVE, plus what is blocking ship.
 
 For a raw diff review, call `/code-review` directly. Use this when you want design judgment plus a go/no-go.
+
+---
+
+## ✦ council: llm-council without OpenRouter
+
+[Karpathy's llm-council](https://github.com/karpathy/llm-council) gets a better answer by asking four different models, letting them rank each other blind, and having a chairman synthesise. That needs API credit on top of your subscription. council runs the same three stages on Claude subagents alone:
+
+1. **Seats answer blind.** The chairman pulls context once into a brief with no lean in it, then 3 to 5 seats answer in parallel, each from an assigned stance (sceptic, steelman, pre-mortem, track record, maintainer, cold reader, ...).
+2. **Anonymised critique.** Each seat critiques and ranks the others as Response A, B, C. It never sees its own answer, because same-model seats recognise themselves.
+3. **Verdict, not a blend.** One call, a ledger of every split and how it was settled, the ranking tally, and the one fact that would flip it. Unanimous seats get flagged as one opinion counted N times.
+
+Stances replace model diversity, which is the honest limit: same-model seats share blind spots. Add "with gemini" (or any non-Claude CLI) for one genuinely different seat, sent a brief stripped of personal detail. About 2N+1 calls per run, invocation-only (`/council <decision>`).
 
 ---
 
