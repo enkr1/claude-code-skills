@@ -1,10 +1,10 @@
 ---
-name: pop
+name: dequeue
 description: Pop the top item off the handoff queue and do it. Use at the start of a fresh session to continue queued work, or when the user says "pop", "dequeue", "deq", "takeover", "接手", "pick up the queue", "what's queued", "continue where we left off", or "resume the handoff". Paired with the enqueue skill, which writes items into the queue.
 argument-hint: "[slug]: blank pops the top item; 'list' just shows the queue"
 ---
 
-# Pop
+# Dequeue
 
 Take the top handoff off the queue, do its work, ack it when the work lands.
 

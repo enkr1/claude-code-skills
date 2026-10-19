@@ -7,8 +7,8 @@
 | Work finished and shipped | No handoff. Commit messages carry it. |
 | Work unfinished, ending session | CLOSE the open doc, then `/clear` |
 | Context nearly full, task alive | CLOSE, then `/clear`. Beats `/compact`, and the artifact outlives the session. |
-| Same task, next day | CLOSE → `/clear` → `/pop <slug>` in the new session |
-| Resuming an item mid-queue | `/pop <slug>`. Jumping the queue is allowed, silent starvation is not. |
+| Same task, next day | CLOSE → `/clear` → `/dequeue <slug>` in the new session |
+| Resuming an item mid-queue | `/dequeue <slug>`. Jumping the queue is allowed, silent starvation is not. |
 | Reasoning worth keeping but task done | A memory or a plan doc, not a handoff |
 | Work you will not touch for a week | A Google Task. Not a handoff doc. |
 | Second topic raised mid-session | Its own doc, right then (~150 tokens). Not a bullet inside the current one. |

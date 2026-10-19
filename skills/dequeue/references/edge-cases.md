@@ -1,4 +1,4 @@
-# Pop edge cases
+# Dequeue edge cases
 
 | Found | Do |
 |---|---|

@@ -1,6 +1,6 @@
 ---
 name: enqueue
-description: Draft a handoff doc as work happens, and queue it for a later session only when the user asks. Use when work looks like it will outlive the session (draft it), before /clear on a live task, or when the user says "enqueue", "handoff", "写个交接", "pick this up later", or "I'll continue tomorrow" (queue it). Paired with the pop skill, which pops and resumes queued items.
+description: Draft a handoff doc as work happens, and queue it for a later session only when the user asks. Use when work looks like it will outlive the session (draft it), before /clear on a live task, or when the user says "enqueue", "handoff", "写个交接", "pick this up later", or "I'll continue tomorrow" (queue it). Paired with the dequeue skill, which pops and resumes queued items.
 argument-hint: "What the next session picks up. Optionally p0-p3 priority."
 ---
 
@@ -70,10 +70,10 @@ Not promoted: one line naming the draft and that it expires in 72 hours unless t
 ```
 Enqueued: re-run the failing parser test against the new timeout branch (p2-202608031845-parser-timeout-fix.md, #2 of 3)
 
-/pop parser-timeout-fix
+/dequeue parser-timeout-fix
 ```
 
-**The slug is not optional, even at #1.** A bare `/pop` pops the queue head, so anywhere else it resumes a different task than the sentence just named.
+**The slug is not optional, even at #1.** A bare `/dequeue` pops the queue head, so anywhere else it resumes a different task than the sentence just named.
 
 No preamble, no summary, no pasted sections.
 
