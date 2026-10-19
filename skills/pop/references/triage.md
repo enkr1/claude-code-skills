@@ -1,8 +1,8 @@
-# Before you list: reconcile, then triage
+# Before you pop: reconcile, then triage
 
 ## Reconcile
 
-Work finishes outside `dequeue` and nothing acks the doc, so settle them first: landed is done, and a sha in State is one `git merge-base --is-ancestor` away. Ack a doc whose State names its pushed sha on origin with the named checks green; list the rest. **Never infer the sha from a subject or a merge**: that closed work never done on 2026-09-10.
+Work finishes outside `pop` and nothing acks the doc, so settle them first: landed is done, and a sha in State is one `git merge-base --is-ancestor` away. Ack a doc whose State names its pushed sha on origin with the named checks green; list the rest. **Never infer the sha from a subject or a merge**: that closed work never done on 2026-09-10.
 
 ## Triage
 

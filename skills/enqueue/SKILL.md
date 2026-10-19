@@ -1,6 +1,6 @@
 ---
 name: enqueue
-description: Draft a handoff doc as work happens, and queue it for a later session only when the user asks. Use when work looks like it will outlive the session (draft it), before /clear on a live task, or when the user says "enqueue", "handoff", "写个交接", "pick this up later", or "I'll continue tomorrow" (queue it). Paired with the dequeue skill, which pops and resumes queued items.
+description: Draft a handoff doc as work happens, and queue it for a later session only when the user asks. Use when work looks like it will outlive the session (draft it), before /clear on a live task, or when the user says "enqueue", "handoff", "写个交接", "pick this up later", or "I'll continue tomorrow" (queue it). Paired with the pop skill, which pops and resumes queued items.
 argument-hint: "What the next session picks up. Optionally p0-p3 priority."
 ---
 
@@ -8,7 +8,7 @@ argument-hint: "What the next session picks up. Optionally p0-p3 priority."
 
 **A doc is opened in `drafts/` when a thread is RAISED and appended to as the work happens, never reconstructed at the end.** A rebuild at close is a flush penalty paid at the session's most expensive point.
 
-**Only the user puts work in the queue.** You draft, they ask, `hd.sh promote` records their words. An item queued on your own judgement is the one nobody dequeues.
+**Only the user puts work in the queue.** You draft, they ask, `hd.sh promote` records their words. An item queued on your own judgement is the one nobody pops.
 
 **The handoff carries what disk cannot.** Files, commits and plans survive on their own; the reasoning does not. What you verified, what you ruled out, why this approach beat the alternative: capture that, reference the rest.
 
@@ -61,7 +61,7 @@ The doc is already current, so closing is not a rebuild.
 3. Run the **Preflight** block once and fix any check that no longer holds.
 4. Read the doc as if you had no memory of the session, and fix what that read turns up before showing it. Finding a flaw and shipping it anyway is what this pass exists to prevent. Checklist: [references/pitfalls.md](references/pitfalls.md).
 
-**Done when met this session → `hd.sh ack <slug>` in that turn**, whoever opened the doc; no dequeue needed, and the user saying it is done is proof. When the user changes the scope, rewrite Done when in the same turn, since a stale one can never be met. **Landed is done** ([template](references/template.md)): nothing past the push, no reminder; they come back if it breaks. Open-ended residue (accruing notes, a domain question) is `MOVED` to its home, never a reason to stay queued.
+**Done when met this session → `hd.sh ack <slug>` in that turn**, whoever opened the doc; no pop needed, and the user saying it is done is proof. When the user changes the scope, rewrite Done when in the same turn, since a stale one can never be met. **Landed is done** ([template](references/template.md)): nothing past the push, no reminder; they come back if it breaks. Open-ended residue (accruing notes, a domain question) is `MOVED` to its home, never a reason to stay queued.
 
 **A handoff holds SESSION STATE, never a specification. Cap 8KB.**
 
@@ -70,10 +70,10 @@ Not promoted: one line naming the draft and that it expires in 72 hours unless t
 ```
 Enqueued: re-run the failing parser test against the new timeout branch (p2-202608031845-parser-timeout-fix.md, #2 of 3)
 
-/dequeue parser-timeout-fix
+/pop parser-timeout-fix
 ```
 
-**The slug is not optional, even at #1.** A bare `/dequeue` pops the queue head, so anywhere else it resumes a different task than the sentence just named.
+**The slug is not optional, even at #1.** A bare `/pop` pops the queue head, so anywhere else it resumes a different task than the sentence just named.
 
 No preamble, no summary, no pasted sections.
 
