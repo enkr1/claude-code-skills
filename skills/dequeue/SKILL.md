@@ -31,7 +31,7 @@ Pop the top handoff, resume the work, and ack (archive) the doc only when it is 
 
 ## Claiming
 
-Right after the pick, before Preflight: `~/.claude/scripts/hd.sh claim <slug>`. Refused: a bare invocation takes the next unclaimed doc; a named slug is the user's go, so say who holds it and since when in one line, then `claim --force`, never ask.
+Right after the pick, before Preflight: `~/.claude/scripts/hd.sh claim <slug>`. Refused: a bare invocation takes the next unclaimed doc; a named slug is the user's go, so say who holds it and since when in one line, then `claim --force`, never ask. Exit 3: its Done when breaks the landed rule, so rewrite that line and claim again.
 
 ## Resuming
 
@@ -49,7 +49,7 @@ Read the doc top to bottom, then follow its own contract:
 
 ## The pop (ack)
 
-When the doc's **Done when** is observably met (a clause that is only the user's QA counts as met), or the user says it is done:
+When the doc's **Done when** is observably met, or the user says it is done:
 
 ```bash
 ~/.claude/scripts/hd.sh ack <slug>
@@ -57,7 +57,7 @@ When the doc's **Done when** is observably met (a clause that is only the user's
 
 **Every bullet under Open questions and Still open is disposed of first**, marked in place as `DONE`, `MOVED <slug | docs/feature-<name>.md | GT>` or `DROPPED <reason>`. `ack` refuses while one is unmarked, since an archived doc's open threads are dead. With a `docs/feature-*.md` pointer it also needs a `**Sweep:**` line and refuses on any stale status line it finds in docs/; its message says how to clear it.
 
-**Verification is yours to OBTAIN, not to request.** Go get the proof: rebuild the harness, start the app, point the local build at real data. Proof is running it this session and reading the result; a commit subject that looks right, a merge or "probably shipped" is inference and never acks. Never ack around a gap: a partial proof is reported, not cashed. `rm` is never the pop, and `done/` is the undo.
+**Verification is yours to OBTAIN, not to request.** Go get the proof: rebuild the harness, start the app, point the local build at real data. Proof is the sha on origin and the named checks, read this session; a commit subject that looks right or "probably shipped" never acks. Never ack around a gap: a partial proof is reported, not cashed. `rm` is never the pop, and `done/` is the undo.
 
 Then report what was completed, the evidence for Done-when (which env), and the remaining queue.
 

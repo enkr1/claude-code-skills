@@ -2,7 +2,7 @@
 
 ## Reconcile
 
-Work finishes outside `dequeue` and nothing acks the doc, so settle judgement-free Done-whens first: a sha, `buildId` or deployed version is one `git merge-base --is-ancestor` away. Ack those, list the rest. **Never a prose Done-when**, which has to be run: inferring one from a merge commit closes work never done, and did on 2026-09-10.
+Work finishes outside `dequeue` and nothing acks the doc, so settle them first: landed is done, and a sha in State is one `git merge-base --is-ancestor` away. Ack a doc whose State names its pushed sha on origin with the named checks green; list the rest. **Never infer the sha from a subject or a merge**: that closed work never done on 2026-09-10.
 
 ## Triage
 

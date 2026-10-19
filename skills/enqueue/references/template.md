@@ -25,7 +25,7 @@ Cover at minimum the artifact the next action operates on.
 
 The single thing to do first, concrete enough to start on without deciding anything. Then the 2-3 steps after it.
 
-**Done when:** the condition that ends the whole block, observable enough to tell finished from nearly-finished. Where a step is to review, verify or finish something, its criteria go here in full: a successor holding only a pointer has to re-derive what "correct" means before it can start. Never a clause that needs the owner's eye or confirmation (added 2026-09-28, third time he asked): his QA is not a condition and gets no todo unless he asks for one, because a clause only he can meet makes the item unpoppable and turns into a chore he never requested.
+**Done when:** where the work lands, because landed is done (owner 2026-10-19: "it's on main = done"): pushed to origin/<branch>, plus the checks that gate the push (a test via `vitest-one.sh`, typecheck, build-check, a look at :3099) with their criteria in full, since a successor holding only a pointer has to re-derive what "correct" means. Nothing after the push and nothing in the owner's hands: no answer, pick, look or QA of his (an open question with a built default ships the default), no deploy, promotion or prod proof, no sweep left for a successor; a read that needs time to pass is a GT task. A clause only he can meet makes the item unpoppable, and the prose rule alone (2026-09-28) kept being broken, so `hd.sh` refuses such a Done when at promote, claim and every write.
 
 **Authority:** what the successor may fix on its own versus what it must stop and report. Say this explicitly for the partly-done case, since finding three of five items already handled is the likeliest way reality differs.
 

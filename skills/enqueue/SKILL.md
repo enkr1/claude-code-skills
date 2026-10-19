@@ -61,7 +61,7 @@ The doc is already current, so closing is not a rebuild.
 3. Run the **Preflight** block once and fix any check that no longer holds.
 4. Read the doc as if you had no memory of the session, and fix what that read turns up before showing it. Finding a flaw and shipping it anyway is what this pass exists to prevent. Checklist: [references/pitfalls.md](references/pitfalls.md).
 
-**Done when met this session → `hd.sh ack <slug>` in that turn**, whoever opened the doc; no dequeue needed, and the user saying it is done is proof. When the user changes the scope, rewrite Done when in the same turn, since a stale one can never be met. **The user's own QA is never part of Done when**: shipped and verified by you is done, and they come back if it breaks, so no reminder either. Open-ended residue (accruing notes, a domain question) is `MOVED` to its home, never a reason to stay queued.
+**Done when met this session → `hd.sh ack <slug>` in that turn**, whoever opened the doc; no dequeue needed, and the user saying it is done is proof. When the user changes the scope, rewrite Done when in the same turn, since a stale one can never be met. **Landed is done** ([template](references/template.md)): nothing past the push, no reminder; they come back if it breaks. Open-ended residue (accruing notes, a domain question) is `MOVED` to its home, never a reason to stay queued.
 
 **A handoff holds SESSION STATE, never a specification. Cap 8KB.**
 
