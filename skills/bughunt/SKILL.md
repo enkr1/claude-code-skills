@@ -36,7 +36,7 @@ An **orchestrator**, not new logic. It sequences skills you already trust and ad
 - Run its START workflow (`issue start <N> --type bug ...`). LLM-estimate priority/effort per that skill's rules (Urgent = prod-block only). Gate: its exit code 0.
 
 ### 2. Diagnose (delegate → diagnose / systematic-debugging)
-- Reproduce first, then root-cause. Runtime evidence over code-reading (per the diagnose skill's own rule). State the hypothesis in its required form (symptom → cause → verification → expected-if-true/false).
+- Triage first per the diagnose skill's Step 0: its tier decides whether a repro is needed at all. When the cause is unknown, state the hypothesis in its required form (symptom → cause → verification → expected-if-true/false).
 - **⛔ CHECKPOINT 1:** surface the confirmed root cause in 3-5 lines. **Stop. Wait for the user to confirm** the diagnosis is right before writing any fix. A wrong root cause wastes the entire run — this gate is not skippable.
 
 ### 3. Class audit
