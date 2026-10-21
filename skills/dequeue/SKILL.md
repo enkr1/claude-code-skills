@@ -51,7 +51,7 @@ When the work is on origin, or the user says it is done:
 ~/.claude/scripts/hd.sh ack <slug>
 ```
 
-**Every bullet under Open questions and Still open is disposed of first**, marked in place as `DONE`, `MOVED <slug | docs/feature-<name>.md | GT>` or `DROPPED <reason>`; a question whose built default shipped is `DONE (default kept)`. With a `docs/feature-*.md` pointer, ack also needs a `**Sweep:**` line and refuses on any stale status line in docs/; its message says how to clear it.
+**Every bullet under Open questions and Still open is disposed of first**, marked in place as `DONE`, `MOVED <slug | docs/feature-<name>.md | todo file>` or `DROPPED <reason>`; a question whose built default shipped is `DONE (default kept)`. With a `docs/feature-*.md` pointer, ack also needs a `**Sweep:**` line and refuses on any stale status line in docs/; its message says how to clear it.
 
 Proof is the sha on origin, read this session (`git merge-base --is-ancestor`), plus the checks Done when names, run before the push. Unpushed work never acks. `rm` is never the ack, and `done/` is the undo.
 

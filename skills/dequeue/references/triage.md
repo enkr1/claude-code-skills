@@ -10,7 +10,7 @@ Work finishes outside `dequeue` and nothing acks the doc, so settle them first: 
 
 Cap 20, no `p3`. Over either, clear the overflow oldest first before working the head:
 
-- Backlog, not interrupted work (no half-finished state, survives a month) -> GT task, `mv` to `done/`. Most of it.
+- Backlog, not interrupted work (no half-finished state, survives a month) -> the owning repo's todo file, `mv` to `done/`. Most of it.
 - Knowledge, not a task (a spec, a decided vocabulary) -> `docs/feature-<name>.md`, `mv` to `done/`.
 - In flight -> leave it, say why.
 

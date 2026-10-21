@@ -66,7 +66,7 @@ jq -rn -f ~/.claude/skills/enqueue/asks.jq ~/.claude/projects/*/<session-id>.jso
 | Marker | Means |
 |---|---|
 | `DONE` | handled this session, and say what landed |
-| `MOVED <slug \| docs/feature-<name>.md \| GT>` | carried, and to exactly where |
+| `MOVED <slug \| docs/feature-<name>.md \| todo file>` | carried, and to exactly where |
 | `DROPPED <reason>` | deliberately not carried, with the reason |
 
 An ask you cannot classify is carried, never dropped. A slash command the harness echoed back is not an ask.
