@@ -34,7 +34,7 @@ Take the top handoff off the queue, do its work, ack it when the work lands.
 Read the doc top to bottom, then follow its own contract:
 
 1. **Run Preflight exactly as written.** A check showing the work already landed means ack it now and say so.
-2. **Follow any `docs/feature-<name>.md` pointer BEFORE Next action, reading its §0 ledger first.** The feature doc holds the decisions and wins when the two disagree.
+2. **Follow any `docs/feature-<name>.md` pointer BEFORE Next action, reading its Decided and Open first.** The feature doc holds the decisions and wins when the two disagree.
 3. **Read Decisions, then start at Next action.** A decision there can have superseded a gate the rest of the doc still assumes.
 4. **Respect Authority.** It says what you may do alone; a promotion (`./deploy-web.sh`) stays the user's word and never holds the ack.
 5. Reality diverging from State beyond what Preflight anticipated: report the divergence, propose the adjusted plan, get a nod.
